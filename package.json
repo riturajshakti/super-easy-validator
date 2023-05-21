@@ -4,8 +4,8 @@
 	"description": "A simple and super easy validator for data validation inspired from Laravel Validator but even better.",
 	"main": "index.js",
 	"scripts": {
-		"build": "stc",
-		"dev": "nodemon dist/index.js"
+		"build": "tsc",
+		"dev": "nodemon dist/test.js"
 	},
 	"author": "",
 	"license": "ISC",
