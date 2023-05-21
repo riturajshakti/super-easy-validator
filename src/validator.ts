@@ -1,4 +1,13 @@
-import { ConstraintType, Data, DataType, Rules, SpecificNumberType, SpecificStringType, Validation } from './types';
+import {
+	ArrayType,
+	ConstraintType,
+	Data,
+	DataType,
+	Rules,
+	SpecificNumberType,
+	SpecificStringType,
+	Validation,
+} from './types';
 
 function validate(rules: Rules, data: Data) {
 	let allErrors: string[] | undefined = [];
@@ -32,6 +41,9 @@ function validate(rules: Rules, data: Data) {
 }
 
 function validateSingleData(key: string, value: any, validations: Validation[], errors: string[]) {
+	let optionalElement = false;
+	let nullableElement = false;
+
 	for (let validation of validations) {
 		// !optional
 		if (validation === 'optional' && value === undefined) {
@@ -78,6 +90,21 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 				.some((e) => validation.startsWith(e + ':'))
 		) {
 			checkConstraint(key, value, validation as ConstraintType, errors);
+			if (errors.length) {
+				break;
+			}
+		}
+
+		// ! Nested Array Check
+		if (validation.startsWith('arrayof:')) {
+			let arrayValidation = validation.substring(8);
+			if (arrayValidation === 'optional') {
+				optionalElement = true;
+			}
+			if (arrayValidation === 'nullable') {
+				nullableElement = true;
+			}
+			checkSpecificArrayType(key, value, validation as ArrayType, errors, optionalElement, nullableElement);
 			if (errors.length) {
 				break;
 			}
@@ -564,6 +591,97 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 				return;
 			}
 		}
+	}
+}
+
+function checkSpecificArrayType(
+	key: string,
+	value: any,
+	type: ArrayType,
+	errors: string[],
+	optionalElement: boolean,
+	nullableElement: boolean
+) {
+	let validation = type.substring(8) as Validation;
+
+	let subOptionalElement = false;
+	let subNullableElement = false;
+
+	if (!Array.isArray(value)) {
+		errors.push(`"${key}" must be an array`);
+		return;
+	}
+
+	let array = value;
+
+	for (let index = 0; index <= array.length - 1; index++) {
+		let element = array[index];
+		let newErrors = [] as string[];
+		let elementKey = `${key}[${index}]`;
+
+		if ((optionalElement && element === undefined) || (nullableElement && element === null)) {
+			continue;
+		}
+
+		// ! string,number,boolean,array,object,bigint,symbol
+		if ('string,number,boolean,array,object,bigint,symbol'.split(',').includes(validation)) {
+			checkDataType(elementKey, element, validation as DataType, newErrors);
+		}
+
+		// ! email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time
+		if (
+			'email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time'
+				.split(',')
+				.includes(validation)
+		) {
+			checkDataType(elementKey, element, 'string', newErrors);
+			if (newErrors.length) {
+				errors.push(...newErrors);
+				continue;
+			}
+			checkSpecificStringType(elementKey, element, validation as SpecificStringType, newErrors);
+		}
+
+		// ! int,positive,negative,natural,whole
+		if ('int,positive,negative,natural,whole'.split(',').includes(validation)) {
+			checkDataType(elementKey, element, 'number', newErrors);
+			if (newErrors.length) {
+				errors.push(...newErrors);
+				continue;
+			}
+			checkSpecificNumberType(elementKey, element, validation as SpecificNumberType, newErrors);
+		}
+
+		// ! equal,size,min,max,regex,decimalsize,decimalmin,decimalmax,enums
+		if (
+			'equal,size,min,max,regex,decimalsize,decimalmin,decimalmax,enums'
+				.split(',')
+				.some((e) => validation.startsWith(`${e}:`))
+		) {
+			checkConstraint(elementKey, element, validation as ConstraintType, newErrors);
+		}
+
+		// ! Nested Array Check
+		if (validation.startsWith('arrayof:')) {
+			let arrayValidation = validation.substring(8);
+			if (arrayValidation === 'optional') {
+				subOptionalElement = true;
+			}
+			if (arrayValidation === 'nullable') {
+				subNullableElement = true;
+			}
+			console.log(validation, subOptionalElement);
+			checkSpecificArrayType(
+				`${key}[${index}]`,
+				element,
+				validation as ArrayType,
+				newErrors,
+				subOptionalElement,
+				subNullableElement
+			);
+		}
+
+		errors.push(...newErrors);
 	}
 }
 

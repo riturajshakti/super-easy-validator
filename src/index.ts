@@ -19,6 +19,7 @@ let body = {
 	address: {
 		pin: '908765',
 	},
+	array: [[undefined, 1, 2, '3'], undefined, ['true', false], ['hi', 'bye']],
 };
 
 let rules = {
@@ -39,6 +40,7 @@ let rules = {
 	time: 'time',
 	address: 'object',
 	'address.pin': 'numeric|size:6',
+	array: 'array|arrayof:optional|arrayof:array|arrayof:arrayof:optional|arrayof:arrayof:string',
 };
 
 let { errors } = Validator.validate(rules, body);

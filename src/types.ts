@@ -36,6 +36,49 @@ export type ConstraintType =
 	| `decimalmax:${number}`
 	| `enums:${string}`; // string, number (comma separated)
 
+export type ArrayType =
+	// basic data types
+	| 'arrayof:string'
+	| 'arrayof:number'
+	| 'arrayof:boolean'
+	| 'arrayof:array'
+	| 'arrayof:object'
+	| 'arrayof:bigint'
+	| 'arrayof:symbol'
+
+	// specific string types
+	| 'arrayof:email'
+	| 'arrayof:url'
+	| 'arrayof:domain'
+	| 'arrayof:name'
+	| 'arrayof:username'
+	| 'arrayof:numeric'
+	| 'arrayof:alpha'
+	| 'arrayof:alphanumeric'
+	| 'arrayof:phone'
+	| 'arrayof:mongoid'
+	| 'arrayof:date'
+	| 'arrayof:dateonly'
+	| 'arrayof:time'
+
+	// specific number types
+	| 'arrayof:int'
+	| 'arrayof:positive'
+	| 'arrayof:negative'
+	| 'arrayof:natural'
+	| 'arrayof:whole'
+
+	// special constraints
+	| `arrayof:equal:${string}` // string, number, boolean
+	| `arrayof:size:${number}` // string, array, number
+	| `arrayof:min:${number}` // string, number, array, date
+	| `arrayof:max:${number}` // string, number, array, date
+	| `arrayof:regex:${string}`
+	| `arrayof:decimalsize:${number}`
+	| `arrayof:decimalmin:${number}`
+	| `arrayof:decimalmax:${number}`
+	| `arrayof:enums:${string}`; // string, number (comma separated)
+
 export type Validation =
 	| 'optional'
 	| 'symbol'
