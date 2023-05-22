@@ -2,4 +2,4 @@
 // Add API section in README docs
 
 // array
-// Nested properties not working
+// Nested properties not working in array
