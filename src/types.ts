@@ -34,7 +34,7 @@ export type ConstraintType =
 	| `decimalsize:${number}`
 	| `decimalmin:${number}`
 	| `decimalmax:${number}`
-	| `enums:${string}`; // string, number (comma separated)
+	| `enums:${string}`; // string, number, boolean (comma separated)
 
 export type ArrayType =
 	// basic data types

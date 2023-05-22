@@ -7,7 +7,7 @@
 		"build": "tsc",
 		"dev": "nodemon dist/test.js"
 	},
-	"author": "",
+	"author": "Rituraj Shakti",
 	"license": "ISC",
 	"devDependencies": {
 		"nodemon": "^2.0.22"

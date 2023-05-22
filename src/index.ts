@@ -386,7 +386,6 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 				return;
 			}
 
-			console.log(value, max);
 			if (typeof value === 'number' && value > max) {
 				errors.push(`"${key}" must have length of at most ${max}`);
 				return;
@@ -659,8 +658,6 @@ function checkSpecificArrayType(
 				.split(',')
 				.some((e) => validation.startsWith(`${e}:`))
 		) {
-			console.log(elementKey, element, validation);
-
 			checkConstraint(elementKey, element, validation as ConstraintType, newErrors);
 		}
 
@@ -673,7 +670,6 @@ function checkSpecificArrayType(
 			if (arrayValidation === 'nullable') {
 				subNullableElement = true;
 			}
-			console.log(validation, subOptionalElement);
 			checkSpecificArrayType(
 				`${key}[${index}]`,
 				element,

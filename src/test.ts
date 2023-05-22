@@ -1,51 +1,59 @@
 import Validator from './index';
 
-let body = {
-	name: 'raj kumar',
-	gender: 'female',
-	adult: 'false',
-	creditCard: '1234567891234567',
-	married: true,
-	phone: '+911234567890',
-	commentId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
-	url: 'http://yahoo.in/index.html?name=raj&password=javhcsd',
-	password: '123',
-	foods: ['apple', 'orange', 'mango'],
-	rating: 5,
-	score: 98765,
-	price: '78.0098',
-	date: '8765-01-01T00:00:00.000+00:00',
-	time: '23:00:00.0',
+let data = {
+	name: 'test123',
+	gender: 'Male',
+	adult: true,
+	creditCard: '1987654312345678',
+	isMarried: 'no',
+	profile: 'example.com',
+	password: 'ab',
+	favoriteFoods: ['chicken', 'egg roll', 'french fries'],
+	rating: 4.5,
+	score: 234.5,
+	accountBalance: 100.345,
+	dob: '1996-01-10T23:50:00.0000+05:30',
+	time: '23:50',
 	address: {
-		pin: '908765',
+		pin: '829119',
+		city: 'Rock Port',
 	},
-	array: [20, 24, 5, 6, 31],
-	// array: [[undefined, 1, 2, '3'], undefined, ['true', false, true, 45, 234], ['hi', 'bye']],
 };
 
 let rules = {
 	name: 'name',
 	gender: 'enums:male,female',
 	adult: 'enums:true,false',
-	creditCard: ['string', 'regex:/^[0-9]{16}$/'],
-	married: 'boolean',
-	phone: 'phone|equal:+911234567890',
-	commentId: 'string|mongoid',
-	url: 'url',
-	password: 'string|min:3|max:10',
-	foods: ['array', 'min:3', 'max:6'],
-	rating: 'number|int|min:1|max:5',
-	score: 'number|size:5',
-	price: 'decimalmin:2',
-	date: 'date',
+	creditCard: 'regex:/^[0-9]{16}$/',
+	isMarried: 'boolean',
+	phone: 'optional|phone',
+	userId: 'mongoid',
+	profile: 'url',
+	password: 'string|min:3|max:15',
+	favoriteFoods: 'array|min:3|max:6',
+	rating: 'number|enums:1,2,3,4,5',
+	score: 'number|whole',
+	accountBalance: 'number|min:0|decimalsize:2',
+	dob: 'date',
 	time: 'time',
 	address: 'object',
 	'address.pin': 'numeric|size:6',
-	array: 'array|arrayof:number|arrayof:max:30|arrayof:min:20',
-	// array: 'array|arrayof:optional|arrayof:array|arrayof:arrayof:optional|arrayof:arrayof:string',
+	'address.city': 'name',
 };
 
-let { errors } = Validator.validate(rules, body);
+let { errors } = Validator.validate(rules, data);
 if (errors) {
-	errors.forEach((e) => console.log(e));
+	console.log(errors);
 }
+
+[
+	'"name" must be a valid name',
+	'"gender" is invalid',
+	'"isMarried" must be boolean',
+	'"userId" is required',
+	'"profile" must be a valid url',
+	'"password" must have length of at least 3',
+	'"rating" is invalid',
+	'"score" must be a whole number',
+	'"accountBalance" must have 2 decimal places',
+];

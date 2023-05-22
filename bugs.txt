@@ -1,8 +1,2 @@
 // array
-
-
-// regex is not supporting "|" right now
-// price: decimal price: 89,
-// enums: extra data type failed only in case of true false
-// commentId: aaaaaaaaaaaaaaaaaaaaaaaa failed
-// date error: date: '2023-01-23T02:30:00.0000Z03:00',
+// Nested properties not working
