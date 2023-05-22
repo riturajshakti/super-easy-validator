@@ -12,7 +12,7 @@
 		"dev": "nodemon dist/test.js"
 	},
 	"author": "Rituraj Shakti",
-	"license": "ISC",
+	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^20.2.3",
 		"nodemon": "^2.0.22"
