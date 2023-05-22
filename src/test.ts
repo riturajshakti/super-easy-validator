@@ -1,4 +1,4 @@
-import Validator from './index';
+const Validator = require('./index');
 
 let data = {
 	name: 'test123',

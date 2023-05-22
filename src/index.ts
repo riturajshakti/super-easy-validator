@@ -704,4 +704,6 @@ function getPropByString(obj: Data, propString: string) {
 	return obj[props[i]];
 }
 
-export default { validate };
+const Validation = { validate };
+
+module.exports = Validation;

@@ -3,3 +3,5 @@ package-lock.json
 dist/
 .vscode/
 validators.js
+test/
+temp.txt
