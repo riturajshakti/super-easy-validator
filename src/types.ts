@@ -21,7 +21,10 @@ export type SpecificStringType =
 	| 'mongoid'
 	| 'date'
 	| 'dateonly'
-	| 'time';
+	| 'time'
+	| 'lower'
+	| 'upper'
+	| 'ip';
 
 export type SpecificNumberType = 'int' | 'positive' | 'negative' | 'natural' | 'whole';
 
@@ -102,6 +105,9 @@ export type Validation =
 	| 'date'
 	| 'dateonly'
 	| 'time'
+	| 'lower'
+	| 'upper'
+	| 'ip'
 	| 'int'
 	| 'positive'
 	| 'negative'

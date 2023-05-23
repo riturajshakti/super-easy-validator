@@ -12,6 +12,9 @@ let data = {
 	rating: 4.5,
 	score: 234.5,
 	accountBalance: 100.345,
+	hash: 'a6g8d7Fkf9Du',
+	hash2: 'PDH78DI908g56',
+	serverIp: '8.45.23.0',
 	dob: '1996-01-10T23:50:00.0000+05:30',
 	time: '23:50',
 	address: {
@@ -34,6 +37,9 @@ let rules = {
 	rating: 'number|enums:1,2,3,4,5',
 	score: 'number|whole',
 	accountBalance: 'number|min:0|decimalsize:2',
+	hash: 'lower',
+	hash2: 'upper',
+	serverIp: 'ip',
 	dob: 'date',
 	time: 'time',
 	address: 'object',
@@ -43,17 +49,20 @@ let rules = {
 
 let { errors } = Validator.validate(rules, data);
 if (errors) {
+	// errors.forEach((e: string) => console.log(e));
 	console.log(errors);
 }
 
-[
-	'"name" must be a valid name',
-	'"gender" is invalid',
-	'"isMarried" must be boolean',
-	'"userId" is required',
-	'"profile" must be a valid url',
-	'"password" must have length of at least 3',
-	'"rating" is invalid',
-	'"score" must be a whole number',
-	'"accountBalance" must have 2 decimal places',
-];
+// Output
+// [
+// 	'"name" must be a valid name',
+// 	'"gender" is invalid',
+// 	'"isMarried" must be boolean',
+// 	'"userId" is required',
+// 	'"profile" must be a valid url',
+// 	'"password" must have length of at least 3',
+// 	'"rating" is invalid',
+// 	'"score" must be a whole number',
+// 	'"accountBalance" must have 2 decimal places',
+// 	'"hash" must not contains upper case letters',
+// ]

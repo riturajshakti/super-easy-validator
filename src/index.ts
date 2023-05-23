@@ -67,9 +67,9 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 			}
 		}
 
-		// ! email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time
+		// ! email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time'
+			'email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {
@@ -249,6 +249,24 @@ function checkSpecificStringType(key: string, value: any, specificType: Specific
 		errors.push(`"${key}" must be a valid time`);
 		return;
 	}
+
+	if (specificType === 'lower' && !/^[^A-Z]+$/.test(value)) {
+		errors.push(`"${key}" must not contains upper case letters`);
+		return;
+	}
+
+	if (specificType === 'upper' && !/^[^a-z]+$/.test(value)) {
+		errors.push(`"${key}" must not contains lower case letters`);
+		return;
+	}
+
+	if (
+		specificType === 'ip' &&
+		!/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(value)
+	) {
+		errors.push(`"${key}" must be a valid IP address`);
+		return;
+	}
 }
 
 function checkSpecificNumberType(key: string, value: any, specificType: SpecificNumberType, errors: string[]) {
@@ -329,9 +347,17 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 			return;
 		}
 
-		if (typeof value === 'number' && `${value}`.length !== size) {
-			errors.push(`"${key}" must have length ${size}`);
-			return;
+		if (typeof value === 'number') {
+			let valueString = `${value}`;
+			let valueLength = valueString.length;
+			valueLength -= valueString
+				.split('')
+				.filter((e) => ['e', '-', '+', '.'].includes(e))
+				.join('').length;
+			if (valueLength !== size) {
+				errors.push(`"${key}" must have ${size} digits`);
+				return;
+			}
 		}
 	}
 
