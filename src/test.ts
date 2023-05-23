@@ -24,7 +24,7 @@ let rules = {
 	name: 'name',
 	gender: 'enums:male,female',
 	adult: 'enums:true,false',
-	creditCard: 'regex:/^[0-9]{16}$/',
+	creditCard: 'string|regex:/^[0-9]{16}$/',
 	isMarried: 'boolean',
 	phone: 'optional|phone',
 	userId: 'mongoid',

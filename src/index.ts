@@ -10,34 +10,38 @@ import {
 } from './types';
 
 function validate(rules: Rules, data: Data) {
-	let allErrors: string[] | undefined = [];
+	try {
+		let allErrors: string[] | undefined = [];
+		for (let key in rules) {
+			let errors = [] as string[];
+			let value = rules[key];
+			let validations: Validation[];
+			if (typeof value === 'string') {
+				validations = value.split('|') as Validation[];
+			} else {
+				validations = value as Validation[];
+			}
 
-	for (let key in rules) {
-		let errors = [] as string[];
-		let value = rules[key];
-		let validations: Validation[];
-		if (typeof value === 'string') {
-			validations = value.split('|') as Validation[];
-		} else {
-			validations = value as Validation[];
+			let dataToSend;
+			if (!key.includes('.')) {
+				dataToSend = data[key];
+			} else {
+				dataToSend = getPropByString(data, key);
+			}
+
+			validateSingleData(key, dataToSend, validations, errors);
+			allErrors.push(...errors);
 		}
 
-		let dataToSend;
-		if (!key.includes('.')) {
-			dataToSend = data[key];
-		} else {
-			dataToSend = getPropByString(data, key);
+		if (allErrors.length === 0) {
+			allErrors = undefined;
 		}
 
-		validateSingleData(key, dataToSend, validations, errors);
-		allErrors.push(...errors);
+		return { errors: allErrors };
+	} catch (error) {
+		console.log(error);
+		return { errors: ['error occurred while data validation'] };
 	}
-
-	if (allErrors.length === 0) {
-		allErrors = undefined;
-	}
-
-	return { errors: allErrors };
 }
 
 function validateSingleData(key: string, value: any, validations: Validation[], errors: string[]) {

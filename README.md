@@ -1,6 +1,6 @@
 # Introduction
 
-**`super-easy-validator`** a super simple npm plugin which helps to do validation in a much simpler way. Its inspired by laravel validator but its even better than laravel validator, as you are going see it very soon.
+**`super-easy-validator`** a super simple npm plugin which helps to do validation in a much simpler way. Its inspired by laravel validator but its even better than laravel validator, as you are going see it very soon. Please write any issues on github if you found any.
 
 # How to install
 
@@ -197,15 +197,17 @@ It supports the following argument based validations (See API for more details):
 
 * `equal:<value>`: equality check for string, number and boolean
 * `size:<int>`: length check for strings and arrays and digits length check for numbers
-* `min:<value>`: minimum length check for strings and arrays, minimum value check for numbers and date
-* `max:<value>`: maximum length check for strings and arrays, maximum value check for numbers and date
+* `min:<value>`: minimum length check for strings and arrays, minimum value check for numbers and date (date should be in ISO format)
+* `max:<value>`: maximum length check for strings and arrays, maximum value check for numbers and date (date should be in ISO format)
 * `regex:<regex>`: regular expressions check for strings
 * `decimalsize:<value>`: check for exact number of digits after decimal points for numbers and numeric strings
 * `decimalmin:<value>`: check for minimum number of digits after decimal points for numbers and numeric strings
 * `decimalmax:<value>`: check for maximum number of digits after decimal points for numbers and numeric strings
 * `enums:<value>`: check for enum values for strings, numbers and boolean
 
-> **Info**: for more details and examples, see the API section.
+> **INFO**: for more details and examples, see the API section.
+
+> **LIMITATIONS**: To know about the limitations of `decimalsize:<value>` , `decimalmin:<value>` and `decimalmax:<value>` , see the API section
 
 ## 7. Regular Expression Limitations:
 
@@ -229,4 +231,575 @@ let rules = {
 
 # API
 
-> Coming Soon
+## Nullable Types
+
+### 1. **`optional`**
+
+`optional` validation makes the variable optional means it can be _undefined_ or _missing field_.
+
+```js
+let rules = {
+    organization: 'optional|string',
+}
+```
+
+In the example above, organization field can be absent or it must be _string_.
+
+### 2. **`nullable`**
+
+`nullable` validation makes the variable nullable means it can be _null_.
+
+```js
+let rules = {
+    organization: 'null|string',
+}
+```
+
+In the example above, organization field can be either _null_ or _string_.
+
+> **NOTE:** If you want any field to support both _undefined_ or _null_, then apply both validation. e.g.
+
+```js
+let rules = {
+    age: 'optional|null|number',
+}
+```
+
+> In the example above, the `age` could be absent, _null_ or even any number.
+
+## Data Types
+
+### 1. **`string`**
+
+`string` validation is used to check if a field is string or not. e.g.
+
+```js
+let rules = {
+    fieldName: 'string',
+}
+```
+
+> **Note:** This validation automatically applies in cases of: `email` , `url` , `domain` , `name` , `username` , `numeric` , `alpha` , `alphanumeric` , `phone` , `mongoid` , `date` , `dateonly` , `time` and `regex:<value>` .
+
+### 2. **`number`**
+
+`number` validation is used to check if a field is number or not. e.g.
+
+```js
+let rules = {
+    fieldName: 'number',
+}
+```
+
+> **Note:** This validation automatically applies in cases of: `int` , `positive` , `negative` , `natural` , `whole` .
+
+### 3. **`boolean`**
+
+`boolean` validation is used to check if a field is boolean (_true_ or _false_). e.g.
+
+```js
+let rules = {
+    fieldName: 'boolean',
+}
+```
+
+### 4. **`array`**
+
+`array` validation is used to check if a field is an array. e.g.
+
+```js
+let rules = {
+    fieldName: 'array',
+}
+```
+
+### 5. **`object`**
+
+`object` validation is used to check if a field is an _object_. e.g.
+
+```js
+let rules = {
+    address: 'object',
+    'address.pin': 'regex:/^[0-9]{6}$/',
+    'address.city': 'name',
+}
+```
+
+You can also write validation for nested properties of object using dot `.`
+
+> **NOTE:** In case if `address` is array, it will fail the validation. Although array in javascript is also an object but it will still fail, as array and object have completely different roles.
+
+### 6. **`bigint`**
+
+`bigint` validation is used to check if a field is a _bigint_ type. e.g.
+
+```js
+let rules = {
+    field: 'bigint',
+}
+```
+
+### 7. **`symbol`**
+
+`symbol` validation is used to check if a field is a _symbol_ type. e.g.
+
+```js
+let rules = {
+    field: 'symbol',
+}
+```
+
+## Specific String Types
+
+> **NOTE:** These validations automatically check if the field is a _string_ data type.
+
+### 1. **`email`**
+
+`email` validation is used to check if a field is a valid email string. e.g.
+
+```js
+let rules = {
+    myEmail: 'email',
+}
+```
+
+### 2. **`url`**
+
+`url` validation is used to check if a field is a valid URL string. e.g.
+
+```js
+let rules = {
+    profile: 'url',
+}
+```
+
+### 3. **`domain`**
+
+`domain` validation is used to check if a field is a valid domain string. e.g.
+
+```js
+let rules = {
+    domain: 'domain',
+}
+```
+
+### 4. **`name`**
+
+`name` validation is used to check if a field is a valid name string. e.g.
+
+```js
+let rules = {
+    studentName: 'name',
+}
+```
+
+### 5. **`username`**
+
+`username` validation is used to check if a field is a valid username string. This is primarily used to generate a unique ID for each user for any particular site. e.g.
+
+```js
+let rules = {
+    username: 'username',
+}
+```
+
+### 6. **`numeric`**
+
+`numeric` validation is used to check if a field is a valid numeric string. This includes any type of number string as long as it can be converted to number data type without resulting in `NaN` . e.g.
+
+```js
+let rules = {
+    otp: 'numeric',
+}
+```
+
+### 7. **`alpha`**
+
+`alpha` validation is used to check if a string contains only alphabets. This includes lowercase as well as uppercase alphabets. e.g.
+
+```js
+let rules = {
+    keyword: 'alpha',
+}
+```
+
+### 8. **`alphanumeric`**
+
+`alphanumeric` validation is used to check if a string contains only alphabets and digits. This includes lowercase as well as uppercase alphabets. e.g.
+
+```js
+let rules = {
+    passwordHash: 'alphanumeric',
+}
+```
+
+### 9. **`phone`**
+
+`phone` validation is used to check if a string contains valid phone number. This could also include a `+` or even a `space` . e.g.
+
+```js
+let rules = {
+    phone: 'optional|phone',
+}
+```
+
+### 10. **`mongoid`**
+
+`mongoid` validation is used to check if a string is valid mongodb ID. e.g.
+
+```js
+let rules = {
+    userId: 'mongoid',
+}
+```
+
+### 11. **`date`**
+
+`date` validation is used to check if a string is valid ISO date. This may also include the time as well. e.g.
+
+```js
+let rules = {
+    dob: 'date',
+}
+```
+
+This will validate the following strings:
+
+```js
+"1996-01-10"
+"1996-01-10T23:50"
+"1996-01-10T23:50:34"
+"1996-01-10T23:50:34.6"
+"1996-01-10T23:50:34.6789"
+"1996-01-10T23:50:34.6789Z"
+"1996-01-10T23:50:34.6789+05:30"
+"1996-01-10T23:50:34.6789-03:00"
+```
+
+### 12. **`dateonly`**
+
+`dateonly` validation is used to check if a string is valid ISO date. This must include date only without time. e.g.
+
+```js
+let rules = {
+    dob: 'dateonly',
+}
+```
+
+This will validate the following strings:
+
+```js
+"1996-01-10"
+"2023-12-30"
+"9999-04-01"
+```
+
+### 13. **`time`**
+
+`time` validation is used to check if a string is valid ISO time. This must include time only. e.g.
+
+```js
+let rules = {
+    startedAt: 'time',
+}
+```
+
+This will validate the following time strings:
+
+```js
+"23:55:00"
+"23:55:00.34"
+"23:55:00.3400"
+```
+
+## Specific Number Validation
+
+> **NOTE:** These validations automatically check if the field is a _number_ data type.
+
+### 1. **`int`**
+
+`int` validation is used to check if a number is valid integer. e.g.
+
+```js
+let rules = {
+    temperature: 'int',
+}
+```
+
+### 2. **`positive`**
+
+`positive` validation is used to check if a number is a positive number (Can't be 0 or negative). e.g.
+
+```js
+let rules = {
+    price: 'positive',
+}
+```
+
+### 3. **`negative`**
+
+`negative` validation is used to check if a number is a negative number (Can't be 0 or positive). e.g.
+
+```js
+let rules = {
+    concaveFocalLength: 'negative',
+}
+```
+
+### 4. **`natural`**
+
+`natural` validation is used to check if a number is a valid natural number (must be positive integers). e.g.
+
+```js
+let rules = {
+    iq: 'natural',
+}
+```
+
+### 5. **`whole`**
+
+`whole` validation is used to check if a number is a valid whole number (can be positive integers or 0). e.g.
+
+```js
+let rules = {
+    score: 'whole',
+}
+```
+
+## Argument Based Validations
+
+These validations require some argument(s).
+
+### 1. **`equal`**
+
+`equal:<value>` validation is used to check if a field has a specific value. It works for string, number and boolean data type
+
+* **For numbers**, it will check if the number equals `<value>`
+* **For strings**, it will check if the string equals `<value>`
+* **For boolean**, it will check if the boolean equals `<value>`.
+
+```js
+let rules = {
+    marks: 'number|equal:100', // marks should be number with value 100
+    isTopper: 'boolean|equal:true', // isTopper should be boolean with value true
+    name: 'string|equal:sia', // name should be string with value 'sia'
+    status: 'equal:200', // auto detect
+}
+```
+
+In this case, if the `status` is a string type then it must be `'200'` , else if the status is number, then it must be `200` .
+
+### 2. **`size`**
+
+`size:<value>` validation is used to check if a field has a specific size.
+
+* **For numbers**, it will check if the number size is of `<value>` digits.
+* **For strings**, it will check if the string length is `<value>`.
+* **For arrays**, it will check if the array length is `<value>`.
+
+e.g.
+
+```js
+let rules = {
+    foods: 'array|size:3', // array should have 3 elements
+    otp: 'string|numeric|size:6', // numeric string should have 6 digits
+    pinCode: 'number|size:5', // pinCode should be number and must have 5 digits
+    field: 'size:4' // Auto detect
+}
+```
+
+> **NOTE:** In case if the data type is not defined as in previous case for `field` , then it will detect the data type of the `field` and then apply this validation but only if `field` is of type `string` , `number` or `array` .
+
+### 3. **`min`**
+
+`min:<value>` validation is used to check if a field has minimum of value `<value>` .
+
+* **For numbers**, it will check if the number is more than or equal to `<value>`.
+* **For strings**, it will check if the string length is more than or equal to `<value>`.
+* **For arrays**, it will check if the array length is more than or equal to `<value>`.
+* **For date string**, it will check if the date is more than or equal to `<value>`. Make sure that the date should be in ISO string format.
+
+e.g.
+
+```js
+let rules = {
+    foods: 'array|min:3', // array should have minimum 3 elements
+    otp: 'string|numeric|min:6', // numeric string should have minimum 6 digits
+    pinCode: 'number|min:5', // pinCode should be >= 5
+    dob: 'date|min:2023-01:01T11:50:34.9876Z', // date should be >= '2023-01:01T11:50:34.9876Z'
+    field: 'min:4' // Auto detect
+}
+```
+
+> **NOTE:** In case if the data type is not defined as in the previous case for `field` , then it will detect the data type of the `field` and then apply `min:` validation but only if `field` is of type `string` , `number` , `array` or `date` .
+
+### 4. **`max`**
+
+`max:<value>` validation is used to check if a field has maximum of value `<value>` .
+
+* **For numbers**, it will check if the number is less than or equal to `<value>`.
+* **For strings**, it will check if the string length is less than or equal to `<value>`.
+* **For arrays**, it will check if the array length is less than or equal to `<value>`.
+* **For date string**, it will check if the date is less than or equal to `<value>`. Make sure that the date should be in ISO string format.
+
+e.g.
+
+```js
+let rules = {
+    foods: 'array|max:3', // array should have maximum 3 elements
+    otp: 'string|numeric|max:6', // numeric string should have maximum 6 digits
+    pinCode: 'number|max:5', // pinCode should be <= 5
+    dob: 'date|max:2023-01:01T11:50:34.9876Z', // date should be <= '2023-01:01T11:50:34.9876Z'
+    field: 'max:4' // Auto detect
+}
+```
+
+> **NOTE:** In case if the data type is not defined as in the previous case for `field` , then it will detect the data type of the `field` and then apply `max:` validation but only if `field` is of type `string` , `number` , `array` or `date` .
+
+### 5. **`regex`**
+
+`regex:<value>` validation is used to check if string matches a specific regular expression `<value>` . This will automatically apply `string` validation, as it only works for string data type.
+
+e.g.
+
+```js
+let rules = {
+    hash: 'regex:/^[A-Z0-9]{128}$/i', // hash should match this regular expression
+}
+```
+
+> **ERROR:** In case if the regular expression contains pipe `|` operator, then it will not work as expected as `|` is a special operator used for separation purpose. e.g. The following is incorrect validation:
+
+e.g.
+
+```js
+let rules = {
+    gender: 'string|regex:/^(male)|(female)$/'
+}
+```
+
+> **FIX:** To get rid of this issue use, write validation using array instead of string. e.g.
+
+```js
+let rules = {
+    gender: ['string', 'regex:/^(male)|(female)$/i']
+}
+```
+
+> Now, it will work fine.
+
+### 6. **`decimalsize`**
+
+`decimalsize:<value>` validation is used to check if a field has `<value>` digits after decimal point.
+
+* **For numbers**, it will check if the number has `<value>` digits after decimal point.
+* **For strings**, it will check if the numeric string has `<value>` digits after decimal point. In this case it will automatically apply `numeric` validation.
+
+e.g.
+
+```js
+let rules = {
+    price: 'numeric|decimalsize:2', // price should be a numeric string with 2 digits after decimal point
+    pi: 'number|decimalsize:6', // pi should be number with 6 digits after decimal point
+    rate: 'decimalsize:3', // Auto detect
+}
+```
+
+> **NOTE:** In case if the data type is not defined as in the previous case for `rate` , then it will detect the data type of the `rate` and then apply `decimalsize:` validation but only if `rate` is of type `string` or `number` .
+
+> **WARNING:** In case if the data type is `number` , then it will trim the last zeroes after decimal point and then apply validation. So, The following example may not work as expected.
+
+```js
+let rules = {
+    score: 'number|decimalsize:3'
+}
+```
+
+> This will fail the validation if score is `23.340` or `23.000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `numeric` string.
+
+### 7. **`decimalmin`**
+
+`decimalmin:<value>` validation is used to check if a field has minimum `<value>` digits after decimal point.
+
+* **For numbers**, it will check if the number has minimum `<value>` digits after decimal point.
+* **For strings**, it will check if the numeric string has minimum `<value>` digits after decimal point. In this case it will automatically apply `numeric` validation.
+
+e.g.
+
+```js
+let rules = {
+    price: 'numeric|decimalmin:2', // price should be a numeric string with minimum 2 digits after decimal point
+    pi: 'number|decimalmin:6', // pi should be number with minimum 6 digits after decimal point
+    rate: 'decimalmin:3', // Auto detect
+}
+```
+
+> **NOTE:** In case if the data type is not defined as in the previous case for `rate` , then it will detect the data type of the `rate` and then apply `decimalmin:` validation but only if `rate` is of type `string` or `number` .
+
+> **WARNING:** In case if the data type is `number` , then it will trim the last zeroes after decimal point and then apply validation. So, The following example may not work as expected.
+
+```js
+let rules = {
+    score: 'number|decimalmin:3'
+}
+```
+
+> This will fail the validation if score is `23.3400` or `23.000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `numeric` string.
+
+### 8. **`decimalmax`**
+
+`decimalmax:<value>` validation is used to check if a field has maximum `<value>` digits after decimal point.
+
+* **For numbers**, it will check if the number has maximum `<value>` digits after decimal point.
+* **For strings**, it will check if the numeric string has maximum `<value>` digits after decimal point. In this case it will automatically apply `numeric` validation.
+
+e.g.
+
+```js
+let rules = {
+    price: 'numeric|decimalmax:2', // price should be a numeric string with maximum 2 digits after decimal point
+    pi: 'number|decimalmax:6', // pi should be number with maximum 6 digits after decimal point
+    rate: 'decimalmax:3', // Auto detect
+}
+```
+
+> **NOTE:** In case if the data type is not defined as in the previous case for `rate` , then it will detect the data type of the `rate` and then apply `decimalmax:` validation but only if `rate` is of type `string` or `number` .
+
+> **WARNING:** In case if the data type is `number` , then it will trim the last zeroes after decimal point and then apply validation. So, The following example may not work as expected.
+
+```js
+let rules = {
+    score: 'number|decimalmax:3'
+}
+```
+
+> This will still pass the validation if score is `23.3400` or `23.00000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `numeric` string.
+
+### 9. **`enums`**
+
+`enums:<values>` validation is used to check if a field has a value which lies in comma separated `<values>` . It works for `string` , `number` and `boolean` data type.
+
+* **For numbers**, it will convert each enum `<values>` into _number_ and then check if anyone of them matches with field value.
+* **For strings**, it will convert each enum `<values>` into _string_ and then check if anyone of them matches with field value.
+* **For boolean**, it will convert each enum `<values>` into _boolean_ and then check if anyone of them matches with field value. This will only check for boolean values (`true`/`false` and not any _truthy_ / _falsy_ values)
+
+```js
+let rules = {
+    rating: 'number|enums:1,2,3,4,5', // rating should be any one of these numbers: 1, 2, 3, 4, or 5
+    status: 'string|enums:pending,success,failed', // status should be string with anyone of: 'pending', 'success', or 'failed'
+    isMarried: 'boolean|enums:true,false', // isMarried should be boolean with value either true or false
+    subject: 'enums:english,maths,science', // auto detect
+}
+```
+
+> **NOTE:** In case if the data type is not defined as in the previous case for `subject` , then it will detect the data type of the `subject` and then apply `enums:` validation but only if `subject` is of type `string` , `number` or `boolean` .
+
+> **WARNING:** Don't add spaces while writing enum values as it will then include spaces while doing validation. e.g.
+
+```js
+let rules = {
+    grade: 'string|enums: A+, A, B+, B, C, F'
+}
+```
+
+> This will check if the grade contains anyone of `' A+'` , `' A'` , `' B+'` , `' C'` and `' F'` , instead of checking `'A+'` , `'A'` , `'B+'` , `'C'` and `'F'` . So make sure to put spaces only when required.
