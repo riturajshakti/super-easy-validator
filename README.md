@@ -117,9 +117,9 @@ In this example, we are giving 3 rules to the name field:
 > **Note:** Instead of string validations with `|` separation you can also give validations in arrays. Here's an equivalent example for the same above rule
 
 ```js
-let rules = [
+let rules = {
   name: ['string', 'min:2', 'max:8']
-]
+}
 ```
 
 ## 2. Data Types:
