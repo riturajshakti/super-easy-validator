@@ -16,6 +16,6 @@
 
 --
 
-# Version 0.0.4
+# Version 0.0.5
 
 - Added new features: `lower`, `upper`, and `ip`

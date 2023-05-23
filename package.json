@@ -1,6 +1,6 @@
 {
 	"name": "super-easy-validator",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"description": "A simple and super easy validator for data validation inspired from Laravel Validator but even better.",
 	"main": "dist/index.js",
 	"repository": {

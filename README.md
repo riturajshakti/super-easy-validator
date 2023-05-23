@@ -14,27 +14,27 @@ npm i super-easy-validator
 
 ```js
 let rules = {
-	name: 'name',
-	gender: 'enums:male,female',
-	adult: 'enums:true,false',
-	creditCard: 'string|regex:/^[0-9]{16}$/',
-	isMarried: 'boolean',
-	phone: 'optional|phone',
-	userId: 'mongoid',
-	profile: 'url',
-	password: 'string|min:3|max:15',
-	favoriteFoods: 'array|min:3|max:6',
-	rating: 'number|enums:1,2,3,4,5',
-	score: 'number|whole',
-	accountBalance: 'number|min:0|decimalsize:2',
-	hash: 'lower',
-	hash2: 'upper',
-	serverIp: 'ip',
-	dob: 'date',
-	time: 'time',
-	address: 'object',
-	'address.pin': 'numeric|size:6',
-	'address.city': 'name',
+  name: 'name',
+  gender: 'enums:male,female',
+  adult: 'enums:true,false',
+  creditCard: 'string|regex:/^[0-9]{16}$/',
+  isMarried: 'boolean',
+  phone: 'optional|phone',
+  userId: 'mongoid',
+  profile: 'url',
+  password: 'string|min:3|max:15',
+  favoriteFoods: 'array|min:3|max:6',
+  rating: 'number|enums:1,2,3,4,5',
+  score: 'number|whole',
+  accountBalance: 'number|min:0|decimalsize:2',
+  hash: 'lower',
+  hash2: 'upper',
+  serverIp: 'ip',
+  dob: 'date',
+  time: 'time',
+  address: 'object',
+  'address.pin': 'numeric|size:6',
+  'address.city': 'name',
 };
 ```
 
@@ -42,26 +42,26 @@ let rules = {
 
 ```js
 let data = {
-	name: 'test123',
-	gender: 'Male',
-	adult: true,
-	creditCard: '1987654312345678',
-	isMarried: 'no',
-	profile: 'example.com',
-	password: 'ab',
-	favoriteFoods: ['chicken', 'egg roll', 'french fries'],
-	rating: 4.5,
-	score: 234.5,
-	accountBalance: 100.345,
-	hash: 'a6g8d7Fkf9Du',
-	hash2: 'PDH78DI908g56',
-	serverIp: '8.45.23.0',
-	dob: '1996-01-10T23:50:00.0000+05:30',
-	time: '23:50',
-	address: {
-		pin: '829119',
-		city: 'Rock Port',
-	},
+  name: 'test123',
+  gender: 'Male',
+  adult: true,
+  creditCard: '1987654312345678',
+  isMarried: 'no',
+  profile: 'example.com',
+  password: 'ab',
+  favoriteFoods: ['chicken', 'egg roll', 'french fries'],
+  rating: 4.5,
+  score: 234.5,
+  accountBalance: 100.345,
+  hash: 'a6g8d7Fkf9Du',
+  hash2: 'PDH78DI908g56',
+  serverIp: '8.45.23.0',
+  dob: '1996-01-10T23:50:00.0000+05:30',
+  time: '23:50',
+  address: {
+    pin: '829119',
+    city: 'Rock Port',
+  },
 };
 ```
 
@@ -72,7 +72,7 @@ const Validator = require('super-easy-validator');
 
 let { errors } = Validator.validate(rules, data);
 if (errors) {
-	console.log(errors);
+  console.log(errors);
 }
 ```
 
@@ -102,7 +102,7 @@ This is how the output should look like:
 
 ```js
 let rules = {
-	name: `string|min:2|max:8`,
+  name: `string|min:2|max:8`,
 };
 ```
 
@@ -173,7 +173,7 @@ By default, all the data validation is _compulsory_, if you want any data field 
 
 ```js
 let rules = {
-	phone: 'optional|phone',
+  phone: 'optional|phone',
 };
 ```
 
@@ -185,7 +185,7 @@ If you want any field to be `nullable` , then use `nullable` validation, this ma
 
 ```js
 let rules = {
-	spouse: 'nullable|name',
+  spouse: 'nullable|name',
 };
 ```
 
@@ -195,7 +195,7 @@ Now, `spouse` can be _null_.
 
 ```js
 let rules = {
-	spouse: 'optional|nullable|name',
+  spouse: 'optional|nullable|name',
 };
 ```
 
@@ -227,7 +227,7 @@ If `string` validations has regex which itself has `|` , then it will fail for v
 
 ```js
 let rules = {
-	gender: 'string|regex:/^(male)|(female)$/',
+  gender: 'string|regex:/^(male)|(female)$/',
 };
 ```
 
@@ -235,7 +235,7 @@ let rules = {
 
 ```js
 let rules = {
-	gender: ['string', 'regex:/^(male)|(female)$/'],
+  gender: ['string', 'regex:/^(male)|(female)$/'],
 };
 ```
 
@@ -249,7 +249,7 @@ let rules = {
 
 ```js
 let rules = {
-	organization: 'optional|string',
+  organization: 'optional|string',
 };
 ```
 
@@ -261,7 +261,7 @@ In the example above, organization field can be absent or it must be _string_.
 
 ```js
 let rules = {
-	organization: 'null|string',
+  organization: 'null|string',
 };
 ```
 
@@ -271,7 +271,7 @@ In the example above, organization field can be either _null_ or _string_.
 
 ```js
 let rules = {
-	age: 'optional|null|number',
+  age: 'optional|null|number',
 };
 ```
 
@@ -285,7 +285,7 @@ let rules = {
 
 ```js
 let rules = {
-	fieldName: 'string',
+  fieldName: 'string',
 };
 ```
 
@@ -297,7 +297,7 @@ let rules = {
 
 ```js
 let rules = {
-	fieldName: 'number',
+  fieldName: 'number',
 };
 ```
 
@@ -309,7 +309,7 @@ let rules = {
 
 ```js
 let rules = {
-	fieldName: 'boolean',
+  fieldName: 'boolean',
 };
 ```
 
@@ -319,7 +319,7 @@ let rules = {
 
 ```js
 let rules = {
-	fieldName: 'array',
+  fieldName: 'array',
 };
 ```
 
@@ -329,9 +329,9 @@ let rules = {
 
 ```js
 let rules = {
-	address: 'object',
-	'address.pin': 'regex:/^[0-9]{6}$/',
-	'address.city': 'name',
+  address: 'object',
+  'address.pin': 'regex:/^[0-9]{6}$/',
+  'address.city': 'name',
 };
 ```
 
@@ -345,7 +345,7 @@ You can also write validation for nested properties of object using dot `.`
 
 ```js
 let rules = {
-	field: 'bigint',
+  field: 'bigint',
 };
 ```
 
@@ -355,7 +355,7 @@ let rules = {
 
 ```js
 let rules = {
-	field: 'symbol',
+  field: 'symbol',
 };
 ```
 
@@ -369,7 +369,7 @@ let rules = {
 
 ```js
 let rules = {
-	myEmail: 'email',
+  myEmail: 'email',
 };
 ```
 
@@ -379,7 +379,7 @@ let rules = {
 
 ```js
 let rules = {
-	profile: 'url',
+  profile: 'url',
 };
 ```
 
@@ -389,7 +389,7 @@ let rules = {
 
 ```js
 let rules = {
-	domain: 'domain',
+  domain: 'domain',
 };
 ```
 
@@ -399,7 +399,7 @@ let rules = {
 
 ```js
 let rules = {
-	studentName: 'name',
+  studentName: 'name',
 };
 ```
 
@@ -409,7 +409,7 @@ let rules = {
 
 ```js
 let rules = {
-	username: 'username',
+  username: 'username',
 };
 ```
 
@@ -419,7 +419,7 @@ let rules = {
 
 ```js
 let rules = {
-	otp: 'numeric',
+  otp: 'numeric',
 };
 ```
 
@@ -429,7 +429,7 @@ let rules = {
 
 ```js
 let rules = {
-	keyword: 'alpha',
+  keyword: 'alpha',
 };
 ```
 
@@ -439,7 +439,7 @@ let rules = {
 
 ```js
 let rules = {
-	passwordHash: 'alphanumeric',
+  passwordHash: 'alphanumeric',
 };
 ```
 
@@ -449,7 +449,7 @@ let rules = {
 
 ```js
 let rules = {
-	phone: 'optional|phone',
+  phone: 'optional|phone',
 };
 ```
 
@@ -459,7 +459,7 @@ let rules = {
 
 ```js
 let rules = {
-	userId: 'mongoid',
+  userId: 'mongoid',
 };
 ```
 
@@ -469,7 +469,7 @@ let rules = {
 
 ```js
 let rules = {
-	dob: 'date',
+  dob: 'date',
 };
 ```
 
@@ -492,7 +492,7 @@ This will validate the following strings:
 
 ```js
 let rules = {
-	dob: 'dateonly',
+  dob: 'dateonly',
 };
 ```
 
@@ -510,7 +510,7 @@ This will validate the following strings:
 
 ```js
 let rules = {
-	startedAt: 'time',
+  startedAt: 'time',
 };
 ```
 
@@ -528,7 +528,7 @@ This will validate the following time strings:
 
 ```js
 let rules = {
-	name: 'lower',
+  name: 'lower',
 };
 ```
 
@@ -538,7 +538,7 @@ let rules = {
 
 ```js
 let rules = {
-	name: 'upper',
+  name: 'upper',
 };
 ```
 
@@ -548,7 +548,7 @@ let rules = {
 
 ```js
 let rules = {
-	name: 'ip',
+  name: 'ip',
 };
 ```
 
@@ -562,7 +562,7 @@ let rules = {
 
 ```js
 let rules = {
-	temperature: 'int',
+  temperature: 'int',
 };
 ```
 
@@ -572,7 +572,7 @@ let rules = {
 
 ```js
 let rules = {
-	price: 'positive',
+  price: 'positive',
 };
 ```
 
@@ -582,7 +582,7 @@ let rules = {
 
 ```js
 let rules = {
-	concaveFocalLength: 'negative',
+  concaveFocalLength: 'negative',
 };
 ```
 
@@ -592,7 +592,7 @@ let rules = {
 
 ```js
 let rules = {
-	iq: 'natural',
+  iq: 'natural',
 };
 ```
 
@@ -602,7 +602,7 @@ let rules = {
 
 ```js
 let rules = {
-	score: 'whole',
+  score: 'whole',
 };
 ```
 
@@ -620,10 +620,10 @@ These validations require some argument(s).
 
 ```js
 let rules = {
-	marks: 'number|equal:100', // marks should be number with value 100
-	isTopper: 'boolean|equal:true', // isTopper should be boolean with value true
-	name: 'string|equal:sia', // name should be string with value 'sia'
-	status: 'equal:200', // auto detect
+  marks: 'number|equal:100', // marks should be number with value 100
+  isTopper: 'boolean|equal:true', // isTopper should be boolean with value true
+  name: 'string|equal:sia', // name should be string with value 'sia'
+  status: 'equal:200', // auto detect
 };
 ```
 
@@ -641,10 +641,10 @@ e.g.
 
 ```js
 let rules = {
-	foods: 'array|size:3', // array should have 3 elements
-	otp: 'string|numeric|size:6', // numeric string should have 6 digits
-	pinCode: 'number|size:5', // pinCode should be number and must have 5 digits
-	field: 'size:4', // Auto detect
+  foods: 'array|size:3', // array should have 3 elements
+  otp: 'string|numeric|size:6', // numeric string should have 6 digits
+  pinCode: 'number|size:5', // pinCode should be number and must have 5 digits
+  field: 'size:4', // Auto detect
 };
 ```
 
@@ -663,11 +663,11 @@ e.g.
 
 ```js
 let rules = {
-	foods: 'array|min:3', // array should have minimum 3 elements
-	otp: 'string|numeric|min:6', // numeric string should have minimum 6 digits
-	pinCode: 'number|min:5', // pinCode should be >= 5
-	dob: 'date|min:2023-01:01T11:50:34.9876Z', // date should be >= '2023-01:01T11:50:34.9876Z'
-	field: 'min:4', // Auto detect
+  foods: 'array|min:3', // array should have minimum 3 elements
+  otp: 'string|numeric|min:6', // numeric string should have minimum 6 digits
+  pinCode: 'number|min:5', // pinCode should be >= 5
+  dob: 'date|min:2023-01:01T11:50:34.9876Z', // date should be >= '2023-01:01T11:50:34.9876Z'
+  field: 'min:4', // Auto detect
 };
 ```
 
@@ -686,11 +686,11 @@ e.g.
 
 ```js
 let rules = {
-	foods: 'array|max:3', // array should have maximum 3 elements
-	otp: 'string|numeric|max:6', // numeric string should have maximum 6 digits
-	pinCode: 'number|max:5', // pinCode should be <= 5
-	dob: 'date|max:2023-01:01T11:50:34.9876Z', // date should be <= '2023-01:01T11:50:34.9876Z'
-	field: 'max:4', // Auto detect
+  foods: 'array|max:3', // array should have maximum 3 elements
+  otp: 'string|numeric|max:6', // numeric string should have maximum 6 digits
+  pinCode: 'number|max:5', // pinCode should be <= 5
+  dob: 'date|max:2023-01:01T11:50:34.9876Z', // date should be <= '2023-01:01T11:50:34.9876Z'
+  field: 'max:4', // Auto detect
 };
 ```
 
@@ -704,7 +704,7 @@ e.g.
 
 ```js
 let rules = {
-	hash: 'regex:/^[A-Z0-9]{128}$/i', // hash should match this regular expression
+  hash: 'regex:/^[A-Z0-9]{128}$/i', // hash should match this regular expression
 };
 ```
 
@@ -714,7 +714,7 @@ e.g.
 
 ```js
 let rules = {
-	gender: 'string|regex:/^(male)|(female)$/',
+  gender: 'string|regex:/^(male)|(female)$/',
 };
 ```
 
@@ -722,7 +722,7 @@ let rules = {
 
 ```js
 let rules = {
-	gender: ['string', 'regex:/^(male)|(female)$/i'],
+  gender: ['string', 'regex:/^(male)|(female)$/i'],
 };
 ```
 
@@ -739,9 +739,9 @@ e.g.
 
 ```js
 let rules = {
-	price: 'numeric|decimalsize:2', // price should be a numeric string with 2 digits after decimal point
-	pi: 'number|decimalsize:6', // pi should be number with 6 digits after decimal point
-	rate: 'decimalsize:3', // Auto detect
+  price: 'numeric|decimalsize:2', // price should be a numeric string with 2 digits after decimal point
+  pi: 'number|decimalsize:6', // pi should be number with 6 digits after decimal point
+  rate: 'decimalsize:3', // Auto detect
 };
 ```
 
@@ -751,7 +751,7 @@ let rules = {
 
 ```js
 let rules = {
-	score: 'number|decimalsize:3',
+  score: 'number|decimalsize:3',
 };
 ```
 
@@ -768,9 +768,9 @@ e.g.
 
 ```js
 let rules = {
-	price: 'numeric|decimalmin:2', // price should be a numeric string with minimum 2 digits after decimal point
-	pi: 'number|decimalmin:6', // pi should be number with minimum 6 digits after decimal point
-	rate: 'decimalmin:3', // Auto detect
+  price: 'numeric|decimalmin:2', // price should be a numeric string with minimum 2 digits after decimal point
+  pi: 'number|decimalmin:6', // pi should be number with minimum 6 digits after decimal point
+  rate: 'decimalmin:3', // Auto detect
 };
 ```
 
@@ -780,7 +780,7 @@ let rules = {
 
 ```js
 let rules = {
-	score: 'number|decimalmin:3',
+  score: 'number|decimalmin:3',
 };
 ```
 
@@ -797,9 +797,9 @@ e.g.
 
 ```js
 let rules = {
-	price: 'numeric|decimalmax:2', // price should be a numeric string with maximum 2 digits after decimal point
-	pi: 'number|decimalmax:6', // pi should be number with maximum 6 digits after decimal point
-	rate: 'decimalmax:3', // Auto detect
+  price: 'numeric|decimalmax:2', // price should be a numeric string with maximum 2 digits after decimal point
+  pi: 'number|decimalmax:6', // pi should be number with maximum 6 digits after decimal point
+  rate: 'decimalmax:3', // Auto detect
 };
 ```
 
@@ -809,7 +809,7 @@ let rules = {
 
 ```js
 let rules = {
-	score: 'number|decimalmax:3',
+  score: 'number|decimalmax:3',
 };
 ```
 
@@ -825,10 +825,10 @@ let rules = {
 
 ```js
 let rules = {
-	rating: 'number|enums:1,2,3,4,5', // rating should be any one of these numbers: 1, 2, 3, 4, or 5
-	status: 'string|enums:pending,success,failed', // status should be string with anyone of: 'pending', 'success', or 'failed'
-	isMarried: 'boolean|enums:true,false', // isMarried should be boolean with value either true or false
-	subject: 'enums:english,maths,science', // auto detect
+  rating: 'number|enums:1,2,3,4,5', // rating should be any one of these numbers: 1, 2, 3, 4, or 5
+  status: 'string|enums:pending,success,failed', // status should be string with anyone of: 'pending', 'success', or 'failed'
+  isMarried: 'boolean|enums:true,false', // isMarried should be boolean with value either true or false
+  subject: 'enums:english,maths,science', // auto detect
 };
 ```
 
@@ -838,7 +838,7 @@ let rules = {
 
 ```js
 let rules = {
-	grade: 'string|enums: A+, A, B+, B, C, F',
+  grade: 'string|enums: A+, A, B+, B, C, F',
 };
 ```
 
