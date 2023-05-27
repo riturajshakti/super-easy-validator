@@ -45,8 +45,8 @@ function validate(rules: Rules, data: Data) {
 }
 
 function validateSingleData(key: string, value: any, validations: Validation[], errors: string[]) {
-	let optionalElement = false;
-	let nullableElement = false;
+	let optionalArrays: any[][] = [];
+	let nullableArrays: any[][] = [];
 
 	for (let validation of validations) {
 		// !optional
@@ -101,14 +101,7 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 
 		// ! Nested Array Check
 		if (validation.startsWith('arrayof:')) {
-			let arrayValidation = validation.substring(8);
-			if (arrayValidation === 'optional') {
-				optionalElement = true;
-			}
-			if (arrayValidation === 'nullable') {
-				nullableElement = true;
-			}
-			checkSpecificArrayType(key, value, validation as ArrayType, errors, optionalElement, nullableElement);
+			checkSpecificArrayType(key, value, validation as ArrayType, errors, optionalArrays, nullableArrays);
 			if (errors.length) {
 				break;
 			}
@@ -639,27 +632,35 @@ function checkSpecificArrayType(
 	value: any,
 	type: ArrayType,
 	errors: string[],
-	optionalElement: boolean,
-	nullableElement: boolean
+	optionalArrays: any[][],
+	nullableArrays: any[][]
 ) {
 	let validation = type.substring(8) as Validation;
-
-	let subOptionalElement = false;
-	let subNullableElement = false;
 
 	if (!Array.isArray(value)) {
 		errors.push(`"${key}" must be an array`);
 		return;
 	}
 
-	let array = value;
+	let array = value as any[];
+
+	if (validation === 'optional') {
+		optionalArrays.push(array);
+	}
+
+	if (validation === 'nullable') {
+		nullableArrays.push(array);
+	}
+
+	let isOptional = optionalArrays.includes(array);
+	let isNullable = nullableArrays.includes(array);
 
 	for (let index = 0; index <= array.length - 1; index++) {
 		let element = array[index];
 		let newErrors = [] as string[];
 		let elementKey = `${key}[${index}]`;
 
-		if ((optionalElement && element === undefined) || (nullableElement && element === null)) {
+		if ((isOptional && element === undefined) || (isNullable && element === null)) {
 			continue;
 		}
 
@@ -668,9 +669,9 @@ function checkSpecificArrayType(
 			checkDataType(elementKey, element, validation as DataType, newErrors);
 		}
 
-		// ! email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time
+		// ! email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time'
+			'email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {
@@ -701,24 +702,24 @@ function checkSpecificArrayType(
 			checkConstraint(elementKey, element, validation as ConstraintType, newErrors);
 		}
 
-		// ! Nested Array Check
-		if (validation.startsWith('arrayof:')) {
-			let arrayValidation = validation.substring(8);
-			if (arrayValidation === 'optional') {
-				subOptionalElement = true;
-			}
-			if (arrayValidation === 'nullable') {
-				subNullableElement = true;
-			}
-			checkSpecificArrayType(
-				`${key}[${index}]`,
-				element,
-				validation as ArrayType,
-				newErrors,
-				subOptionalElement,
-				subNullableElement
-			);
-		}
+		// // ! Nested Array Check
+		// if (validation.startsWith('arrayof:')) {
+		// 	let arrayValidation = validation.substring(8);
+		// 	if (arrayValidation === 'optional') {
+		// 		subOptionalElement = true;
+		// 	}
+		// 	if (arrayValidation === 'nullable') {
+		// 		subNullableElement = true;
+		// 	}
+		// 	checkSpecificArrayType(
+		// 		`${key}[${index}]`,
+		// 		element,
+		// 		validation as ArrayType,
+		// 		newErrors,
+		// 		subOptionalElement,
+		// 		subNullableElement
+		// 	);
+		// }
 
 		errors.push(...newErrors);
 	}

@@ -63,6 +63,9 @@ export type ArrayType =
 	| 'arrayof:date'
 	| 'arrayof:dateonly'
 	| 'arrayof:time'
+	| 'arrayof:lower'
+	| 'arrayof:upper'
+	| 'arrayof:ip'
 
 	// specific number types
 	| 'arrayof:int'
@@ -146,6 +149,9 @@ export type Validation =
 				| 'date'
 				| 'dateonly'
 				| 'time'
+				| 'lower'
+				| 'upper'
+				| 'ip'
 
 				// specific number types
 				| 'int'

@@ -1,6 +1,8 @@
 # Introduction
 
-**`super-easy-validator`** a super simple npm plugin which helps to do validation in a much simpler way. Its inspired by laravel validator but its even better than laravel validator, as you are going see it very soon. Please write any issues on github if you found any.
+**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, as you are going see it very soon.
+
+Please write any issues on github if you found any. Don't hesitate to suggest any new features if you have any idea.
 
 # How to install
 
@@ -27,6 +29,7 @@ let rules = {
   password: 'string|min:3|max:15',
   favoriteFoods: 'array|min:3|max:6',
   rating: 'number|enums:1,2,3,4,5',
+  ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5',
   score: 'number|whole',
   accountBalance: 'number|min:0|decimalsize:2',
   hash: 'lower',
@@ -53,6 +56,7 @@ let data = {
   password: 'ab',
   favoriteFoods: ['chicken', 'egg roll', 'french fries'],
   rating: 4.5,
+  ratings: [3, 5, undefined, true, 5.67],
   score: 234.5,
   accountBalance: 100.345,
   hash: 'a6g8d7Fkf9Du',
@@ -83,14 +87,16 @@ This is how the output should look like:
 ```js
 [
   'at least one of "mail", "phone" is required',
-  '"name" must be a valid name',
+  '"name" must be a valid name',        
   '"gender" is invalid',
-  '"isMarried" must be boolean',
+  '"isMarried" must be boolean',        
   '"userId" is required',
-  '"profile" must be a valid url',       
+  '"profile" must be a valid url',      
   '"password" must have length of at least 3',
   '"rating" is invalid',
-  '"score" must be a whole number',      
+  '"ratings[3]" must be number',        
+  '"ratings[4]" must be a natural number',
+  '"score" must be a whole number',     
   '"accountBalance" must have 2 decimal places',
   '"hash" must not contains upper case letters',
   '"hash2" must not contains lower case letters'
@@ -229,6 +235,7 @@ It supports the following argument based validations (See API for more details):
 - `decimalmin:<value>`: check for minimum number of digits after decimal points for numbers and numeric strings
 - `decimalmax:<value>`: check for maximum number of digits after decimal points for numbers and numeric strings
 - `enums:<value>`: check for enum values for strings, numbers and boolean
+- `arrayof:<validation>`: check if each elements in the array follows the given `<validation>`. (It has its own separate section)
 
 > **INFO**: for more details and examples, see the API section.
 
@@ -253,6 +260,33 @@ let rules = {
   gender: ['string', 'regex:/^(male)|(female)$/'],
 };
 ```
+
+## 8. Array Elements Validation:
+
+Sometimes it is required to validate each elements in an array. For this purpose we have `arrayof:` validation. It is an argument based validation where the argument itself is a validation rule. e.g.
+
+```js
+let rules = {
+  skills: 'array|min:2|arrayof:string|arrayof:max:10',
+};
+```
+
+The above example validate the `skills` field only when all these criteria meets: 
+
+* `skills` field should be of type _array_
+* it should have at least 2 elements
+* each element in the `skills` array should be _string_
+* each element in the `skills` array should not exceed 10 characters.
+
+Here is one more example for validation of optional emails list (The list could have valid email _string_ or _undefined_):
+
+```js
+let rules = {
+  emails: 'arrayof:optional|arrayof:email'
+};
+```
+
+> **NOTE:** `array` validation is automatically applied when you use `arrayof:` validation rule.
 
 # API
 
@@ -883,3 +917,79 @@ let rules = {
 ```
 
 > This will check if the grade contains anyone of `' A+'` , `' A'` , `' B+'` , `' C'` and `' F'` , instead of checking `'A+'` , `'A'` , `'B+'` , `'C'` and `'F'` . So make sure to put spaces only when required.
+
+### 10. **`arrayof`**
+
+Sometimes it is required to validate each elements in an array. For this purpose we have `arrayof:` validation. It is an argument based validation where the argument itself is a validation rule. e.g.
+
+```js
+let rules = {
+  skills: 'array|min:2|arrayof:string|arrayof:max:10',
+};
+```
+
+The above example validate the `skills` field only when all criteria meets: 
+
+* `skills` field is of type _array_
+* it should have at least 2 elements
+* each element in the `skills` array should be _string_
+* each element in the `skills` array should not exceed 10 characters.
+
+Here is one more example for validation of optional emails list (The list could have valid email _string_ or _undefined_):
+
+```js
+let rules = {
+  emails: 'arrayof:optional|arrayof:email'
+};
+```
+
+> **NOTE:** `array` validation automatically applied when you use `arrayof:` validation rule.
+
+#### **`arrayof`:** supports the following validations:
+
+##### Data Types
+* `arrayof:string`
+* `arrayof:number`
+* `arrayof:boolean`
+* `arrayof:array`
+* `arrayof:object`
+* `arrayof:bigint`
+* `arrayof:symbol`
+
+##### Specific String Types
+* `arrayof:email`
+* `arrayof:url`
+* `arrayof:domain`
+* `arrayof:name`
+* `arrayof:username`
+* `arrayof:numeric`
+* `arrayof:alpha`
+* `arrayof:alphanumeric`
+* `arrayof:phone`
+* `arrayof:mongoid`
+* `arrayof:date`
+* `arrayof:dateonly`
+* `arrayof:time`
+* `arrayof:lower`
+* `arrayof:upper`
+* `arrayof:ip`
+
+##### Specific Number Types
+* `arrayof:int`
+* `arrayof:positive`
+* `arrayof:negative`
+* `arrayof:natural`
+* `arrayof:whole`
+
+##### Argument Based Types
+* `arrayof:equal:${string}`
+* `arrayof:size:${number}`
+* `arrayof:min:${number}`
+* `arrayof:max:${number}`
+* `arrayof:regex:${string}`
+* `arrayof:decimalsize:${number}`
+* `arrayof:decimalmin:${number}`
+* `arrayof:decimalmax:${number}`
+* `arrayof:enums:${string}`
+
+> **NOTE:** These validations follows the same rule as shown in their own sections but this time these will work for each elements in the array

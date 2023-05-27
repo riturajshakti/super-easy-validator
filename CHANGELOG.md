@@ -25,3 +25,9 @@
 # Version 0.1.0
 
 - Added new feature: `$atleast`
+
+---
+
+# Version 0.2.0
+
+- Added new features for array elements validation: `arrayof:`

@@ -14,6 +14,7 @@ let rules = {
 	password: 'string|min:3|max:15',
 	favoriteFoods: 'array|min:3|max:6',
 	rating: 'number|enums:1,2,3,4,5',
+	ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5',
 	score: 'number|whole',
 	accountBalance: 'number|min:0|decimalsize:2',
 	hash: 'lower',
@@ -36,6 +37,7 @@ let data = {
 	password: 'ab',
 	favoriteFoods: ['chicken', 'egg roll', 'french fries'],
 	rating: 4.5,
+	ratings: [3, 5, undefined, true, 5.67],
 	score: 234.5,
 	accountBalance: 100.345,
 	hash: 'a6g8d7Fkf9Du',
@@ -57,16 +59,18 @@ if (errors) {
 
 // Output
 // [
-//   '"name" must be a valid name',
-//   '"gender" is invalid',
-//   '"isMarried" must be boolean',
-//   'at least one of "mail", "phone" is required',
-//   '"userId" is required',
-//   '"profile" must be a valid url',
-//   '"password" must have length of at least 3',
-//   '"rating" is invalid',
-//   '"score" must be a whole number',
-//   '"accountBalance" must have 2 decimal places',
-//   '"hash" must not contains upper case letters',
-//   '"hash2" must not contains lower case letters'
-// ]
+// 	'at least one of "mail", "phone" is required',
+// 	'"name" must be a valid name',
+// 	'"gender" is invalid',
+// 	'"isMarried" must be boolean',
+// 	'"userId" is required',
+// 	'"profile" must be a valid url',
+// 	'"password" must have length of at least 3',
+// 	'"rating" is invalid',
+// 	'"ratings[3]" must be number',
+// 	'"ratings[4]" must be a natural number',
+// 	'"score" must be a whole number',
+// 	'"accountBalance" must have 2 decimal places',
+// 	'"hash" must not contains upper case letters',
+// 	'"hash2" must not contains lower case letters',
+// ];
