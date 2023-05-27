@@ -19,3 +19,9 @@
 # Version 0.0.6
 
 - Added new features: `lower`, `upper`, and `ip`
+
+---
+
+# Version 0.1.0
+
+- Added new feature: `$atleast`

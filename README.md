@@ -14,12 +14,14 @@ npm i super-easy-validator
 
 ```js
 let rules = {
+  mail: 'optional|email',
+  phone: 'optional|phone',
+  $atleast: 'mail|phone',
   name: 'name',
   gender: 'enums:male,female',
   adult: 'enums:true,false',
   creditCard: 'string|regex:/^[0-9]{16}$/',
   isMarried: 'boolean',
-  phone: 'optional|phone',
   userId: 'mongoid',
   profile: 'url',
   password: 'string|min:3|max:15',
@@ -78,16 +80,17 @@ if (errors) {
 
 This is how the output should look like:
 
-```sh
+```js
 [
+  'at least one of "mail", "phone" is required',
   '"name" must be a valid name',
   '"gender" is invalid',
   '"isMarried" must be boolean',
   '"userId" is required',
-  '"profile" must be a valid url',
+  '"profile" must be a valid url',       
   '"password" must have length of at least 3',
   '"rating" is invalid',
-  '"score" must be a whole number',
+  '"score" must be a whole number',      
   '"accountBalance" must have 2 decimal places',
   '"hash" must not contains upper case letters',
   '"hash2" must not contains lower case letters'
@@ -179,6 +182,18 @@ let rules = {
 
 In this case, `phone` can be optional (means this field can be absent).
 
+### Atleast
+
+Some times it is required to have at least one field among the list of few optional fields. Let's say we have optional `email` and `phone` of a user but atleast one of them should always be present. In that case we can use `$atleast`, this will make sure we have atleast `email` or `phone` field. e.g.
+
+```js
+let rules = {
+  email: 'optional|email',
+  phone: 'optional|phone',
+  $atleast: 'email|phone'
+};
+```
+
 ### Nullable
 
 If you want any field to be `nullable` , then use `nullable` validation, this make sure that the field can be null. e.g.
@@ -255,7 +270,32 @@ let rules = {
 
 In the example above, organization field can be absent or it must be _string_.
 
-### 2. **`nullable`**
+### 2. **`$atleast`**
+
+Some times it is required to have at least one field among the list of few optional fields. Suppose we have optional `otpUnlock`, `faceUnlock` and `pinUnlock` fields, but atleast one of them is required. In that case we can use `$atleast`. e.g.
+
+```js
+let rules = {
+  otpUnlock: 'optional|boolean',
+  faceUnlock: 'optional|boolean',
+  pinUnlock: 'optional|boolean',
+  $atleast: 'otpUnlock|faceUnlock|pinUnlock'
+};
+```
+
+or, you can even pass these fields in array:
+
+```js
+let rules = {
+  otpUnlock: 'optional|boolean',
+  faceUnlock: 'optional|boolean',
+  pinUnlock: 'optional|boolean',
+  $atleast: ['otpUnlock', 'faceUnlock', 'pinUnlock']
+};
+```
+This will make sure at least one of the 3 is `true`.
+
+### 3. **`nullable`**
 
 `nullable` validation makes the variable nullable means it can be _null_.
 
@@ -534,7 +574,7 @@ let rules = {
 
 ### 15. **`upper`**
 
-`upper` validation is used to check if a string is all uppercase. This could include any character except uppercase letters. e.g.
+`upper` validation is used to check if a string is all uppercase. This could include any character except lowercase letters. e.g.
 
 ```js
 let rules = {

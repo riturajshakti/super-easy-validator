@@ -22,14 +22,14 @@ function validate(rules: Rules, data: Data) {
 				validations = value as Validation[];
 			}
 
-			let dataToSend;
-			if (!key.includes('.')) {
-				dataToSend = data[key];
+			let dataToSend = !key.includes('.') ? data[key] : getPropByString(data, key);
+
+			if (key !== '$atleast') {
+				validateSingleData(key, dataToSend, validations, errors);
 			} else {
-				dataToSend = getPropByString(data, key);
+				validateAtleastData(data, validations as string[], errors);
 			}
 
-			validateSingleData(key, dataToSend, validations, errors);
 			allErrors.push(...errors);
 		}
 
@@ -114,6 +114,16 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 			}
 		}
 	}
+}
+
+function validateAtleastData(data: Data, keys: string[], errors: string[]) {
+	for (let key of keys) {
+		let value = !key.includes('.') ? data[key] : getPropByString(data, key);
+		if (value) {
+			return;
+		}
+	}
+	errors.push(`at least one of ${keys.map((e) => `"${e}"`).join(', ')} is required`);
 }
 
 function checkDataType(key: string, value: any, dataType: DataType, errors: string[]) {

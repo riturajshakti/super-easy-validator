@@ -1,5 +1,31 @@
 const Validator = require('./index');
 
+let rules = {
+	mail: 'optional|email',
+	phone: 'optional|phone',
+	$atleast: 'mail|phone',
+	name: 'name',
+	gender: 'enums:male,female',
+	adult: 'enums:true,false',
+	creditCard: 'string|regex:/^[0-9]{16}$/',
+	isMarried: 'boolean',
+	userId: 'mongoid',
+	profile: 'url',
+	password: 'string|min:3|max:15',
+	favoriteFoods: 'array|min:3|max:6',
+	rating: 'number|enums:1,2,3,4,5',
+	score: 'number|whole',
+	accountBalance: 'number|min:0|decimalsize:2',
+	hash: 'lower',
+	hash2: 'upper',
+	serverIp: 'ip',
+	dob: 'date',
+	time: 'time',
+	address: 'object',
+	'address.pin': 'numeric|size:6',
+	'address.city': 'name',
+};
+
 let data = {
 	name: 'test123',
 	gender: 'Male',
@@ -23,30 +49,6 @@ let data = {
 	},
 };
 
-let rules = {
-	name: 'name',
-	gender: 'enums:male,female',
-	adult: 'enums:true,false',
-	creditCard: 'string|regex:/^[0-9]{16}$/',
-	isMarried: 'boolean',
-	phone: 'optional|phone',
-	userId: 'mongoid',
-	profile: 'url',
-	password: 'string|min:3|max:15',
-	favoriteFoods: 'array|min:3|max:6',
-	rating: 'number|enums:1,2,3,4,5',
-	score: 'number|whole',
-	accountBalance: 'number|min:0|decimalsize:2',
-	hash: 'lower',
-	hash2: 'upper',
-	serverIp: 'ip',
-	dob: 'date',
-	time: 'time',
-	address: 'object',
-	'address.pin': 'numeric|size:6',
-	'address.city': 'name',
-};
-
 let { errors } = Validator.validate(rules, data);
 if (errors) {
 	// errors.forEach((e: string) => console.log(e));
@@ -55,14 +57,16 @@ if (errors) {
 
 // Output
 // [
-// 	'"name" must be a valid name',
-// 	'"gender" is invalid',
-// 	'"isMarried" must be boolean',
-// 	'"userId" is required',
-// 	'"profile" must be a valid url',
-// 	'"password" must have length of at least 3',
-// 	'"rating" is invalid',
-// 	'"score" must be a whole number',
-// 	'"accountBalance" must have 2 decimal places',
-// 	'"hash" must not contains upper case letters',
+//   '"name" must be a valid name',
+//   '"gender" is invalid',
+//   '"isMarried" must be boolean',
+//   'at least one of "mail", "phone" is required',
+//   '"userId" is required',
+//   '"profile" must be a valid url',
+//   '"password" must have length of at least 3',
+//   '"rating" is invalid',
+//   '"score" must be a whole number',
+//   '"accountBalance" must have 2 decimal places',
+//   '"hash" must not contains upper case letters',
+//   '"hash2" must not contains lower case letters'
 // ]
