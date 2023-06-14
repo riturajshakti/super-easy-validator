@@ -31,3 +31,9 @@
 # Version 0.2.0
 
 - Added new features for array elements validation: `arrayof:`
+
+---
+
+# Version 0.3.0
+
+- Changed ES version for old browser compatibility

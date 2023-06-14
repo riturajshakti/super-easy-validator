@@ -1,6 +1,6 @@
 {
 	"name": "super-easy-validator",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "A simple and super easy validator for data validation inspired from Laravel Validator but even better.",
 	"main": "dist/index.js",
 	"repository": {
@@ -8,14 +8,15 @@
 		"url": "https://github.com/riturajshakti/super-easy-validator.git"
 	},
 	"scripts": {
-		"build": "tsc",
+		"build": "npx tsc",
 		"dev": "nodemon dist/test.js"
 	},
 	"author": "Rituraj Shakti",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^20.2.3",
-		"nodemon": "^2.0.22"
+		"nodemon": "^2.0.22",
+		"typescript": "^5.0.4"
 	},
 	"keywords": [
 		"field",
@@ -57,7 +58,5 @@
 		"data validation utility",
 		"data validation framework"
 	],
-	"dependencies": {
-		"typescript": "^5.0.4"
-	}
+	"dependencies": {}
 }

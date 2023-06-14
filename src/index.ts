@@ -745,6 +745,6 @@ function getPropByString(obj: Data, propString: string) {
 	return obj[props[i]];
 }
 
-const Validation = { validate };
+const Validator = { validate };
 
-module.exports = Validation;
+module.exports = Validator;
