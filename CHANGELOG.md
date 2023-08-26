@@ -37,3 +37,20 @@
 # Version 0.3.0
 
 - Changed ES version for old browser compatibility
+
+---
+
+# Version 0.4.0
+
+- Added type safety
+
+---
+
+# Version 0.5.0
+
+- Removed numeric type
+- Added numeric string type checks for more specific number types: `number`, `positive`, `negative`, `int`, `whole`, `natural`
+- Now all type of string numbers can be checked by adding a `string` before any number type check: e.g. `string|int`, `string|natural`, etc
+- All these will also work with argument based validations
+- `name` validation will now also checks for short names
+- Added `fullname` validation

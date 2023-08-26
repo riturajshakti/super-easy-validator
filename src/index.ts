@@ -12,9 +12,8 @@ import {
 function validate(rules: Rules, data: Data) {
 	try {
 		let allErrors: string[] | undefined = [];
-		for (let key in rules) {
+		for (let [key, value] of Object.entries(rules)) {
 			let errors = [] as string[];
-			let value = rules[key];
 			let validations: Validation[];
 			if (typeof value === 'string') {
 				validations = value.split('|') as Validation[];
@@ -59,21 +58,23 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 			return;
 		}
 
+		const previousValidations = validations.slice(0, validations.indexOf(validation));
+
 		// ! string,number,boolean,object,array,bigint
 		if ('string,number,boolean,object,array,bigint'.split(',').includes(validation)) {
-			checkDataType(key, value, validation as DataType, errors);
+			checkDataType(key, value, validation as DataType, previousValidations, errors);
 			if (errors.length) {
 				break;
 			}
 		}
 
-		// ! email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
+		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {
-			checkSpecificStringType(key, value, validation as SpecificStringType, errors);
+			checkSpecificStringType(key, value, validation as SpecificStringType, previousValidations, errors);
 			if (errors.length) {
 				break;
 			}
@@ -81,7 +82,7 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 
 		// ! int,positive,negative,natural,whole
 		if ('int,positive,negative,natural,whole'.split(',').includes(validation)) {
-			checkSpecificNumberType(key, value, validation as SpecificNumberType, errors);
+			checkSpecificNumberType(key, value, validation as SpecificNumberType, previousValidations, errors);
 			if (errors.length) {
 				break;
 			}
@@ -93,7 +94,7 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 				.split(',')
 				.some((e) => validation.startsWith(e + ':'))
 		) {
-			checkConstraint(key, value, validation as ConstraintType, errors);
+			checkConstraint(key, value, validation as ConstraintType, previousValidations, errors);
 			if (errors.length) {
 				break;
 			}
@@ -101,7 +102,15 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 
 		// ! Nested Array Check
 		if (validation.startsWith('arrayof:')) {
-			checkSpecificArrayType(key, value, validation as ArrayType, errors, optionalArrays, nullableArrays);
+			checkSpecificArrayType(
+				key,
+				value,
+				validation as ArrayType,
+				previousValidations,
+				errors,
+				optionalArrays,
+				nullableArrays
+			);
 			if (errors.length) {
 				break;
 			}
@@ -112,14 +121,20 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 function validateAtleastData(data: Data, keys: string[], errors: string[]) {
 	for (let key of keys) {
 		let value = !key.includes('.') ? data[key] : getPropByString(data, key);
-		if (value) {
+		if (value !== null && value !== undefined) {
 			return;
 		}
 	}
 	errors.push(`at least one of ${keys.map((e) => `"${e}"`).join(', ')} is required`);
 }
 
-function checkDataType(key: string, value: any, dataType: DataType, errors: string[]) {
+function checkDataType(
+	key: string,
+	value: any,
+	dataType: DataType,
+	previousValidations: Validation[],
+	errors: string[]
+) {
 	if (value === undefined || value === null) {
 		errors.push(`"${key}" is required`);
 		return;
@@ -130,13 +145,18 @@ function checkDataType(key: string, value: any, dataType: DataType, errors: stri
 		return;
 	}
 
+	const hasString = previousValidations.includes('string') || previousValidations.includes('arrayof:string')
+
 	if (dataType === 'string' && typeof value !== 'string') {
 		errors.push(`"${key}" must be string`);
 		return;
 	}
 
-	if (dataType === 'number' && typeof value !== 'number') {
-		errors.push(`"${key}" must be number`);
+	if (dataType === 'number' && hasString && Number.isNaN(+value)) {
+		errors.push(`"${key}" must be a valid numeric string`);
+		return;
+	} else if (dataType === 'number' && !hasString && typeof value !== 'number') {
+		errors.push(`"${key}" must be a valid number`);
 		return;
 	}
 
@@ -145,8 +165,11 @@ function checkDataType(key: string, value: any, dataType: DataType, errors: stri
 		return;
 	}
 
-	if (dataType === 'boolean' && typeof value !== 'boolean') {
-		errors.push(`"${key}" must be boolean`);
+	if (dataType === 'boolean' && hasString && !['true', 'false'].includes(value)) {
+		errors.push(`"${key}" must be a valid boolean string`);
+		return;
+	} else if (dataType === 'boolean' && !hasString && typeof value !== 'boolean') {
+		errors.push(`"${key}" must be a valid boolean`);
 		return;
 	}
 
@@ -161,13 +184,19 @@ function checkDataType(key: string, value: any, dataType: DataType, errors: stri
 	}
 }
 
-function checkSpecificStringType(key: string, value: any, specificType: SpecificStringType, errors: string[]) {
+function checkSpecificStringType(
+	key: string,
+	value: any,
+	specificType: SpecificStringType,
+	previousValidations: Validation[],
+	errors: string[]
+) {
 	if (value === undefined || value === null) {
 		errors.push(`"${key}" is required`);
 		return;
 	}
 
-	checkDataType(key, value, 'string', errors);
+	checkDataType(key, value, 'string', previousValidations, errors);
 	if (errors.length) {
 		return;
 	}
@@ -198,18 +227,18 @@ function checkSpecificStringType(key: string, value: any, specificType: Specific
 		return;
 	}
 
-	if (specificType === 'name' && !/^([a-zA-Z]{2,}\s[a-zA-Z]{1,}'?-?[a-zA-Z]{2,}\s?([a-zA-Z]{1,})?)$/.test(value)) {
+	if (specificType === 'name' && !/^[A-Za-z. ]{2,30}$/.test(value)) {
 		errors.push(`"${key}" must be a valid name`);
+		return;
+	}
+
+	if (specificType === 'fullname' && !/^([a-zA-Z]{2,}\s[a-zA-Z]{1,}'?-?[a-zA-Z]{2,}\s?([a-zA-Z]{1,})?)$/.test(value)) {
+		errors.push(`"${key}" must be a valid fullname`);
 		return;
 	}
 
 	if (specificType === 'username' && !/^[^\W_](?!.*?[._]{2})[\w.]{6,18}[^\W_]$/.test(value)) {
 		errors.push(`"${key}" must be a valid username`);
-		return;
-	}
-
-	if (specificType === 'numeric' && Number.isNaN(+value)) {
-		errors.push(`"${key}" must be a valid numeric string`);
 		return;
 	}
 
@@ -272,59 +301,92 @@ function checkSpecificStringType(key: string, value: any, specificType: Specific
 	}
 }
 
-function checkSpecificNumberType(key: string, value: any, specificType: SpecificNumberType, errors: string[]) {
+function checkSpecificNumberType(
+	key: string,
+	value: any,
+	specificType: SpecificNumberType,
+	previousValidations: Validation[],
+	errors: string[]
+) {
 	if (value === undefined || value === null) {
 		errors.push(`"${key}" is required`);
 		return;
 	}
 
-	checkDataType(key, value, 'number', errors);
+	checkDataType(key, value, 'number', previousValidations, errors);
 	if (errors.length) {
 		return;
 	}
 
-	if (specificType === 'int' && `${value}`.includes('.')) {
+	const hasString = previousValidations.includes('string') || previousValidations.includes('arrayof:string')
+
+	if (specificType === 'int' && hasString && `${+value}`.includes('.')) {
+		errors.push(`"${key}" must be a valid integer string`);
+		return;
+	} else if (specificType === 'int' && !hasString && `${value}`.includes('.')) {
 		errors.push(`"${key}" must be a valid integer`);
 		return;
 	}
 
-	if (specificType === 'positive' && value <= 0) {
-		errors.push(`"${key}" must be a positive number`);
+	if (specificType === 'positive' && hasString && +value <= 0) {
+		errors.push(`"${key}" must be a valid positive numeric string`);
+		return;
+	} else if (specificType === 'positive' && !hasString && value <= 0) {
+		errors.push(`"${key}" must be a valid positive number`);
 		return;
 	}
 
-	if (specificType === 'negative' && value >= 0) {
-		errors.push(`"${key}" must be a negative number`);
+	if (specificType === 'negative' && hasString && +value >= 0) {
+		errors.push(`"${key}" must be a valid negative numeric string`);
+		return;
+	} else if (specificType === 'negative' && !hasString && value >= 0) {
+		errors.push(`"${key}" must be a valid negative number`);
 		return;
 	}
 
-	if (specificType === 'natural' && (`${value}`.includes('.') || value <= 0)) {
-		errors.push(`"${key}" must be a natural number`);
+	if (specificType === 'natural' && hasString && (`${+value}`.includes('.') || +value <= 0)) {
+		errors.push(`"${key}" must be a valid natural numeric string`);
+		return;
+	} else if (specificType === 'natural' && !hasString && (`${value}`.includes('.') || value <= 0)) {
+		errors.push(`"${key}" must be a valid natural number`);
 		return;
 	}
 
-	if (specificType === 'whole' && (`${value}`.includes('.') || value < 0)) {
-		errors.push(`"${key}" must be a whole number`);
+	if (specificType === 'whole' && hasString && (`${+value}`.includes('.') || +value < 0)) {
+		errors.push(`"${key}" must be a valid whole numeric string`);
+		return;
+	} else if (specificType === 'whole' && !hasString && (`${value}`.includes('.') || value < 0)) {
+		errors.push(`"${key}" must be a valid whole number`);
 		return;
 	}
 }
 
-function checkConstraint(key: string, value: any, type: ConstraintType, errors: string[]) {
+function checkConstraint(
+	key: string,
+	value: any,
+	type: ConstraintType,
+	previousValidations: Validation[],
+	errors: string[]
+) {
 	if (value === undefined || value === null) {
 		errors.push(`"${key}" is required`);
 		return;
 	}
+
+	const isNumeric = previousValidations.some(e => ['number', 'positive', 'negative', 'int', 'whole', 'natural'].includes(e));
+	const isString = typeof value === 'string';
+	const isNumber = typeof value === 'number';
 
 	// ! equal:
 	if (type.startsWith('equal:')) {
 		let data = type.substring(6);
 
-		if (typeof value === 'string' && data !== value) {
+		if (isString && data !== value) {
 			errors.push(`"${key}" must be equal to ${data}`);
 			return;
 		}
 
-		if (typeof value === 'number' && +data !== value) {
+		if (isNumber && +data !== value) {
 			errors.push(`"${key}" must be equal to ${data}`);
 			return;
 		}
@@ -340,7 +402,7 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 	if (type.startsWith('size:')) {
 		let size = +type.substring(5);
 
-		if (typeof value === 'string' && value.length !== size) {
+		if (isString && !isNumeric && value.length !== size) {
 			errors.push(`"${key}" must have length ${size}`);
 			return;
 		}
@@ -350,8 +412,8 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 			return;
 		}
 
-		if (typeof value === 'number') {
-			let valueString = `${value}`;
+		if ((isString && isNumeric) || isNumber) {
+			let valueString = `${+value}`;
 			let valueLength = valueString.length;
 			valueLength -= valueString
 				.split('')
@@ -378,7 +440,7 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 				return;
 			}
 		} else {
-			if (typeof value === 'string' && value.length < min) {
+			if (isString && !isNumeric && value.length < min) {
 				errors.push(`"${key}" must have length of at least ${min}`);
 				return;
 			}
@@ -388,8 +450,8 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 				return;
 			}
 
-			if (typeof value === 'number' && value < min) {
-				errors.push(`"${key}" must have length of at least ${min}`);
+			if ( ((isString && isNumeric) || isNumber) && +value < min) {
+				errors.push(`"${key}" must be at least ${min}`);
 				return;
 			}
 		}
@@ -409,7 +471,7 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 				return;
 			}
 		} else {
-			if (typeof value === 'string' && value.length > max) {
+			if (isString && !isNumeric &&  value.length > max) {
 				errors.push(`"${key}" must have length of at most ${max}`);
 				return;
 			}
@@ -419,8 +481,8 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 				return;
 			}
 
-			if (typeof value === 'number' && value > max) {
-				errors.push(`"${key}" must have length of at most ${max}`);
+			if (((isString && isNumeric) || isNumber) && +value > max) {
+				errors.push(`"${key}" must be at most ${max}`);
 				return;
 			}
 		}
@@ -594,19 +656,19 @@ function checkConstraint(key: string, value: any, type: ConstraintType, errors: 
 	if (type.startsWith('enums:')) {
 		let array: any[] = type.substring(6).split(',');
 
-		if (typeof value === 'string') {
+		if (isString && !isNumeric) {
 			if (!array.includes(value)) {
 				errors.push(`"${key}" is invalid`);
 				return;
 			}
 		}
 
-		if (typeof value === 'number') {
+		if (isNumber || isNumeric) {
 			if (
 				!array
 					.filter((e) => !Number.isNaN(+e))
 					.map((e) => +e)
-					.includes(value)
+					.includes(+value)
 			) {
 				errors.push(`"${key}" is invalid`);
 				return;
@@ -631,6 +693,7 @@ function checkSpecificArrayType(
 	key: string,
 	value: any,
 	type: ArrayType,
+	previousValidations: Validation[],
 	errors: string[],
 	optionalArrays: any[][],
 	nullableArrays: any[][]
@@ -666,31 +729,31 @@ function checkSpecificArrayType(
 
 		// ! string,number,boolean,array,object,bigint,symbol
 		if ('string,number,boolean,array,object,bigint,symbol'.split(',').includes(validation)) {
-			checkDataType(elementKey, element, validation as DataType, newErrors);
+			checkDataType(elementKey, element, validation as DataType, previousValidations, newErrors);
 		}
 
-		// ! email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
+		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,username,numeric,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {
-			checkDataType(elementKey, element, 'string', newErrors);
+			checkDataType(elementKey, element, 'string', previousValidations, newErrors);
 			if (newErrors.length) {
 				errors.push(...newErrors);
 				continue;
 			}
-			checkSpecificStringType(elementKey, element, validation as SpecificStringType, newErrors);
+			checkSpecificStringType(elementKey, element, validation as SpecificStringType, previousValidations, newErrors);
 		}
 
 		// ! int,positive,negative,natural,whole
 		if ('int,positive,negative,natural,whole'.split(',').includes(validation)) {
-			checkDataType(elementKey, element, 'number', newErrors);
+			checkDataType(elementKey, element, 'number', previousValidations, newErrors);
 			if (newErrors.length) {
 				errors.push(...newErrors);
 				continue;
 			}
-			checkSpecificNumberType(elementKey, element, validation as SpecificNumberType, newErrors);
+			checkSpecificNumberType(elementKey, element, validation as SpecificNumberType, previousValidations, newErrors);
 		}
 
 		// ! equal,size,min,max,regex,decimalsize,decimalmin,decimalmax,enums
@@ -699,7 +762,7 @@ function checkSpecificArrayType(
 				.split(',')
 				.some((e) => validation.startsWith(`${e}:`))
 		) {
-			checkConstraint(elementKey, element, validation as ConstraintType, newErrors);
+			checkConstraint(elementKey, element, validation as ConstraintType, previousValidations, newErrors);
 		}
 
 		// // ! Nested Array Check

@@ -13,8 +13,8 @@ export type SpecificStringType =
 	| 'url'
 	| 'domain'
 	| 'name'
+	| 'fullname'
 	| 'username'
-	| 'numeric'
 	| 'alpha'
 	| 'alphanumeric'
 	| 'phone'
@@ -54,8 +54,8 @@ export type ArrayType =
 	| 'arrayof:url'
 	| 'arrayof:domain'
 	| 'arrayof:name'
+	| 'arrayof:fullname'
 	| 'arrayof:username'
-	| 'arrayof:numeric'
 	| 'arrayof:alpha'
 	| 'arrayof:alphanumeric'
 	| 'arrayof:phone'
@@ -99,8 +99,8 @@ export type Validation =
 	| 'url'
 	| 'domain'
 	| 'name'
+	| 'fullname'
 	| 'username'
-	| 'numeric' // numeric string
 	| 'alpha'
 	| 'alphanumeric'
 	| 'phone'
@@ -128,46 +128,46 @@ export type Validation =
 	| `arrayof:${
 			// basic data types
 			| 'string'
-				| 'number'
-				| 'boolean'
-				| 'array'
-				| 'object'
-				| 'bigint'
-				| 'symbol'
+			| 'number'
+			| 'boolean'
+			| 'array'
+			| 'object'
+			| 'bigint'
+			| 'symbol'
 
-				// specific string types
-				| 'email'
-				| 'url'
-				| 'domain'
-				| 'name'
-				| 'username'
-				| 'numeric'
-				| 'alpha'
-				| 'alphanumeric'
-				| 'phone'
-				| 'mongoid'
-				| 'date'
-				| 'dateonly'
-				| 'time'
-				| 'lower'
-				| 'upper'
-				| 'ip'
+			// specific string types
+			| 'email'
+			| 'url'
+			| 'domain'
+			| 'name'
+			| 'fullname'
+			| 'username'
+			| 'alpha'
+			| 'alphanumeric'
+			| 'phone'
+			| 'mongoid'
+			| 'date'
+			| 'dateonly'
+			| 'time'
+			| 'lower'
+			| 'upper'
+			| 'ip'
 
-				// specific number types
-				| 'int'
-				| 'positive'
-				| 'negative'
-				| 'natural'
-				| 'whole'
+			// specific number types
+			| 'int'
+			| 'positive'
+			| 'negative'
+			| 'natural'
+			| 'whole'
 
-				// special constraints
-				| `equal:${string}` // string, number, boolean
-				| `size:${number}` // string, array, number
-				| `min:${number}` // string, number, array, date
-				| `max:${number}` // string, number, array, date
-				| `regex:${string}`
-				| `decimalsize:${number}`
-				| `decimalmin:${number}`
-				| `decimalmax:${number}`
-				| `enums:${string}` // string, number (comma separated)
+			// special constraints
+			| `equal:${string}` // string, number, boolean
+			| `size:${number}` // string, array, number
+			| `min:${number}` // string, number, array, date
+			| `max:${number}` // string, number, array, date
+			| `regex:${string}`
+			| `decimalsize:${number}`
+			| `decimalmin:${number}`
+			| `decimalmax:${number}`
+			| `enums:${string}` // string, number (comma separated)
 	  }`;

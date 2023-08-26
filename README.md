@@ -1,6 +1,6 @@
 # Introduction
 
-**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, as you are going see it very soon.
+**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than express-validator.
 
 Please write any issues on github if you found any. Don't hesitate to suggest any new features if you have any idea.
 
@@ -38,8 +38,9 @@ let rules = {
   dob: 'date',
   time: 'time',
   address: 'object',
-  'address.pin': 'numeric|size:6',
+  'address.pin': 'string|number|size:6',
   'address.city': 'name',
+  limit: 'optional|string|natural'
 };
 ```
 
@@ -68,6 +69,7 @@ let data = {
     pin: '829119',
     city: 'Rock Port',
   },
+  limit: '-20'
 };
 ```
 
@@ -99,7 +101,8 @@ This is how the output should look like:
   '"score" must be a whole number',     
   '"accountBalance" must have 2 decimal places',
   '"hash" must not contains upper case letters',
-  '"hash2" must not contains lower case letters'
+  '"hash2" must not contains lower case letters',
+  '"limit" must be a valid natural numeric string'
 ]
 ```
 
@@ -143,17 +146,19 @@ You can add the following data type check:
 - `bigint`
 - `symbol`
 
+> **NOTE:** By using the combination of `string` and `number` you can check for _numeric string_ validation. e.g. `string|natural` will check for _natural number string_. Same works for `string` and `boolean` as well.
+
 ## 3. Automatic String Check:
 
 In these cases, it will automatic check for `string` data type, and you don't need to explicitly add a `string` type check:
 
 - `name`
+- `fullname`
 - `phone`
 - `email`
 - `url`
 - `domain`
 - `username`
-- `numeric`
 - `alpha`
 - `alphanumeric`
 - `mongoid`
@@ -227,9 +232,9 @@ let rules = {
 It supports the following argument based validations (See API for more details):
 
 - `equal:<value>`: equality check for string, number and boolean
-- `size:<int>`: length check for strings and arrays and digits length check for numbers
-- `min:<value>`: minimum length check for strings and arrays, minimum value check for numbers and date (date should be in ISO format)
-- `max:<value>`: maximum length check for strings and arrays, maximum value check for numbers and date (date should be in ISO format)
+- `size:<int>`: length check for strings and arrays and digits length check for numbers (or numeric strings)
+- `min:<value>`: minimum length check for strings and arrays, minimum value check for numbers(or numeric strings) and date(date should be in ISO format)
+- `max:<value>`: maximum length check for strings and arrays, maximum value check for numbers(or numeric strings) and date(date should be in ISO format)
 - `regex:<regex>`: regular expressions check for strings
 - `decimalsize:<value>`: check for exact number of digits after decimal points for numbers and numeric strings
 - `decimalmin:<value>`: check for minimum number of digits after decimal points for numbers and numeric strings
@@ -277,6 +282,15 @@ The above example validate the `skills` field only when all these criteria meets
 * it should have at least 2 elements
 * each element in the `skills` array should be _string_
 * each element in the `skills` array should not exceed 10 characters.
+
+Similarly, array of numeric strings can also be checked using this approach:
+
+```js
+let rules = {
+  emails: 'arrayof:string|arrayof:int'
+};
+```
+In the example above, it will check for array where each elements must be integer strings.
 
 Here is one more example for validation of optional emails list (The list could have valid email _string_ or _undefined_):
 
@@ -363,7 +377,7 @@ let rules = {
 };
 ```
 
-> **Note:** This validation automatically applies in cases of: `email` , `url` , `domain` , `name` , `username` , `numeric` , `alpha` , `alphanumeric` , `phone` , `mongoid` , `date` , `dateonly` , `time` , `lower` , `upper` , `ip` , and `regex:<value>` .
+> **Note:** This validation automatically applies in cases of: `email` , `url` , `domain` , `name` , `username` , `alpha` , `alphanumeric` , `phone` , `mongoid` , `date` , `dateonly` , `time` , `lower` , `upper` , `ip` , and `regex:<value>` .
 
 ### 2. **`number`**
 
@@ -386,6 +400,16 @@ let rules = {
   fieldName: 'boolean',
 };
 ```
+
+> **Note:** You can use a combination of `string` and `boolean` to check if a field is boolean string. e.g.
+
+```js
+let rules = {
+  active: 'string|boolean',
+};
+```
+
+> the above example will check if `active` is one of `'true'` or `'false'`
 
 ### 4. **`array`**
 
@@ -469,7 +493,7 @@ let rules = {
 
 ### 4. **`name`**
 
-`name` validation is used to check if a field is a valid name string. e.g.
+`name` validation is used to check if a field is a valid name (can be full name or short name) string. e.g.
 
 ```js
 let rules = {
@@ -477,23 +501,23 @@ let rules = {
 };
 ```
 
-### 5. **`username`**
+### 5. **`fullname`**
+
+`fullname` validation is used to check if a field is a valid fullname (must be 2 or 3 words separated with spaces) string. e.g.
+
+```js
+let rules = {
+  studentName: 'fullname',
+};
+```
+
+### 6. **`username`**
 
 `username` validation is used to check if a field is a valid username string. This is primarily used to generate a unique ID for each user for any particular site. e.g.
 
 ```js
 let rules = {
   username: 'username',
-};
-```
-
-### 6. **`numeric`**
-
-`numeric` validation is used to check if a field is a valid numeric string. This includes any type of number string as long as it can be converted to number data type without resulting in `NaN` . e.g.
-
-```js
-let rules = {
-  otp: 'numeric',
 };
 ```
 
@@ -640,6 +664,16 @@ let rules = {
 };
 ```
 
+> **NOTE:** This can be used along with `string` to check for integer strings. e.g.
+
+```js
+let rules = {
+  temperature: 'string|int',
+};
+```
+
+> The above validation will check if `temperature` is a valid integer string.
+
 ### 2. **`positive`**
 
 `positive` validation is used to check if a number is a positive number (Can't be 0 or negative). e.g.
@@ -649,6 +683,16 @@ let rules = {
   price: 'positive',
 };
 ```
+
+> **NOTE:** This can be used along with `string` to check for positive numeric strings. e.g.
+
+```js
+let rules = {
+  price: 'string|positive',
+};
+```
+
+> The above validation will check if `price` is a valid positive number in string format.
 
 ### 3. **`negative`**
 
@@ -660,6 +704,16 @@ let rules = {
 };
 ```
 
+> **NOTE:** This can be used along with `string` to check for negative numeric strings. e.g.
+
+```js
+let rules = {
+  depth: 'string|negative',
+};
+```
+
+> The above validation will check if `depth` is a valid negative number in string format.
+
 ### 4. **`natural`**
 
 `natural` validation is used to check if a number is a valid natural number (must be positive integers). e.g.
@@ -670,6 +724,16 @@ let rules = {
 };
 ```
 
+> **NOTE:** This can be used along with `string` to check for natural numeric strings. e.g.
+
+```js
+let rules = {
+  iq: 'string|natural',
+};
+```
+
+> The above validation will check if `iq` is a valid natural number in string format.
+
 ### 5. **`whole`**
 
 `whole` validation is used to check if a number is a valid whole number (can be positive integers or 0). e.g.
@@ -679,6 +743,16 @@ let rules = {
   score: 'whole',
 };
 ```
+
+> **NOTE:** This can be used along with `string` to check for whole number strings. e.g.
+
+```js
+let rules = {
+  score: 'string|whole',
+};
+```
+
+> The above validation will check if `score` is a valid whole number in string format.
 
 ## Argument Based Validations
 
@@ -716,7 +790,7 @@ e.g.
 ```js
 let rules = {
   foods: 'array|size:3', // array should have 3 elements
-  otp: 'string|numeric|size:6', // numeric string should have 6 digits
+  otp: 'string|natural|size:6', // natural number string should have 6 digits
   pinCode: 'number|size:5', // pinCode should be number and must have 5 digits
   field: 'size:4', // Auto detect
 };
@@ -738,7 +812,7 @@ e.g.
 ```js
 let rules = {
   foods: 'array|min:3', // array should have minimum 3 elements
-  otp: 'string|numeric|min:6', // numeric string should have minimum 6 digits
+  otp: 'string|natural|min:6', // natural number string should have minimum 6 digits
   pinCode: 'number|min:5', // pinCode should be >= 5
   dob: 'date|min:2023-01:01T11:50:34.9876Z', // date should be >= '2023-01:01T11:50:34.9876Z'
   field: 'min:4', // Auto detect
@@ -761,7 +835,7 @@ e.g.
 ```js
 let rules = {
   foods: 'array|max:3', // array should have maximum 3 elements
-  otp: 'string|numeric|max:6', // numeric string should have maximum 6 digits
+  otp: 'string|natural|max:6', // natural number string should have maximum 6 digits
   pinCode: 'number|max:5', // pinCode should be <= 5
   dob: 'date|max:2023-01:01T11:50:34.9876Z', // date should be <= '2023-01:01T11:50:34.9876Z'
   field: 'max:4', // Auto detect
@@ -807,13 +881,13 @@ let rules = {
 `decimalsize:<value>` validation is used to check if a field has `<value>` digits after decimal point.
 
 - **For numbers**, it will check if the number has `<value>` digits after decimal point.
-- **For strings**, it will check if the numeric string has `<value>` digits after decimal point. In this case it will automatically apply `numeric` validation.
+- **For strings**, it will check if the numeric string has `<value>` digits after decimal point. In this case it will automatically apply `string|number` validation.
 
 e.g.
 
 ```js
 let rules = {
-  price: 'numeric|decimalsize:2', // price should be a numeric string with 2 digits after decimal point
+  price: 'string|number|decimalsize:2', // price should be a numeric string with 2 digits after decimal point
   pi: 'number|decimalsize:6', // pi should be number with 6 digits after decimal point
   rate: 'decimalsize:3', // Auto detect
 };
@@ -829,20 +903,20 @@ let rules = {
 };
 ```
 
-> This will fail the validation if score is `23.340` or `23.000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `numeric` string.
+> This will fail the validation if score is `23.340` or `23.000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `string|number` string.
 
 ### 7. **`decimalmin`**
 
 `decimalmin:<value>` validation is used to check if a field has minimum `<value>` digits after decimal point.
 
 - **For numbers**, it will check if the number has minimum `<value>` digits after decimal point.
-- **For strings**, it will check if the numeric string has minimum `<value>` digits after decimal point. In this case it will automatically apply `numeric` validation.
+- **For strings**, it will check if the numeric string has minimum `<value>` digits after decimal point. In this case it will automatically apply `string|number` validation.
 
 e.g.
 
 ```js
 let rules = {
-  price: 'numeric|decimalmin:2', // price should be a numeric string with minimum 2 digits after decimal point
+  price: 'string|number|decimalmin:2', // price should be a numeric string with minimum 2 digits after decimal point
   pi: 'number|decimalmin:6', // pi should be number with minimum 6 digits after decimal point
   rate: 'decimalmin:3', // Auto detect
 };
@@ -858,20 +932,20 @@ let rules = {
 };
 ```
 
-> This will fail the validation if score is `23.3400` or `23.000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `numeric` string.
+> This will fail the validation if score is `23.3400` or `23.000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `string|number` string.
 
 ### 8. **`decimalmax`**
 
 `decimalmax:<value>` validation is used to check if a field has maximum `<value>` digits after decimal point.
 
 - **For numbers**, it will check if the number has maximum `<value>` digits after decimal point.
-- **For strings**, it will check if the numeric string has maximum `<value>` digits after decimal point. In this case it will automatically apply `numeric` validation.
+- **For strings**, it will check if the numeric string has maximum `<value>` digits after decimal point. In this case it will automatically apply `string|number` validation.
 
 e.g.
 
 ```js
 let rules = {
-  price: 'numeric|decimalmax:2', // price should be a numeric string with maximum 2 digits after decimal point
+  price: 'string|number|decimalmax:2', // price should be a numeric string with maximum 2 digits after decimal point
   pi: 'number|decimalmax:6', // pi should be number with maximum 6 digits after decimal point
   rate: 'decimalmax:3', // Auto detect
 };
@@ -887,7 +961,7 @@ let rules = {
 };
 ```
 
-> This will still pass the validation if score is `23.3400` or `23.00000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `numeric` string.
+> This will still pass the validation if score is `23.3400` or `23.00000` because the last zeroes after decimal point will be removed and then it will check for validation. But this only happens with `number` and not with `string|number` string.
 
 ### 9. **`enums`**
 
@@ -935,6 +1009,16 @@ The above example validate the `skills` field only when all criteria meets:
 * each element in the `skills` array should be _string_
 * each element in the `skills` array should not exceed 10 characters.
 
+Similarly, to add array of numeric strings or boolean strings, you can use the combination of `arrayof:string` and `arrayof:` with other number validation like `number`, `positive`, `negative`, `int`, `whole` and `natural`. e.g.,
+
+```js
+let rules = {
+  ratings: 'arrayof:string|arrayof:natural|arrayof:max:5'
+}
+```
+
+The above validation makes sure that the ratings is an array of strings where each elements must be any natural number (in string format)
+
 Here is one more example for validation of optional emails list (The list could have valid email _string_ or _undefined_):
 
 ```js
@@ -962,7 +1046,6 @@ let rules = {
 * `arrayof:domain`
 * `arrayof:name`
 * `arrayof:username`
-* `arrayof:numeric`
 * `arrayof:alpha`
 * `arrayof:alphanumeric`
 * `arrayof:phone`

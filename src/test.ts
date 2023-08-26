@@ -25,6 +25,7 @@ let rules = {
 	address: 'object',
 	'address.pin': 'numeric|size:6',
 	'address.city': 'name',
+	limit: 'optional|string|natural',
 };
 
 let data = {
@@ -49,6 +50,7 @@ let data = {
 		pin: '829119',
 		city: 'Rock Port',
 	},
+	limit: '-20',
 };
 
 let { errors } = Validator.validate(rules, data);
@@ -59,18 +61,19 @@ if (errors) {
 
 // Output
 // [
-// 	'at least one of "mail", "phone" is required',
-// 	'"name" must be a valid name',
-// 	'"gender" is invalid',
-// 	'"isMarried" must be boolean',
-// 	'"userId" is required',
-// 	'"profile" must be a valid url',
-// 	'"password" must have length of at least 3',
-// 	'"rating" is invalid',
-// 	'"ratings[3]" must be number',
-// 	'"ratings[4]" must be a natural number',
-// 	'"score" must be a whole number',
-// 	'"accountBalance" must have 2 decimal places',
-// 	'"hash" must not contains upper case letters',
-// 	'"hash2" must not contains lower case letters',
-// ];
+//   'at least one of "mail", "phone" is required',  
+//   '"name" must be a valid name',
+//   '"gender" is invalid',
+//   '"isMarried" must be a valid boolean',
+//   '"userId" is required',
+//   '"profile" must be a valid url',
+//   '"password" must have length of at least 3',    
+//   '"rating" is invalid',
+//   '"ratings[3]" must be a valid number',
+//   '"ratings[4]" must be a valid natural number',  
+//   '"score" must be a valid whole number',
+//   '"accountBalance" must have 2 decimal places',  
+//   '"hash" must not contains upper case letters',  
+//   '"hash2" must not contains lower case letters', 
+//   '"limit" must be a valid natural numeric string'
+// ]
