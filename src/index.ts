@@ -821,4 +821,4 @@ function checkSpecificArrayType(
 
 const Validator = { validate };
 
-export default Validator;
+module.exports = Validator;

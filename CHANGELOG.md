@@ -55,7 +55,7 @@
 - `name` validation will now also checks for short names
 - Added `fullname` validation
 
-# Version 0.6.0
+# Version 0.6.1
 
 - `name` validation improved
 - Added quotes option: `none`, `single-quotes`, `double-quotes`, `backtick` around field names in error messages

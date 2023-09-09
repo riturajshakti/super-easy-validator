@@ -1,4 +1,4 @@
-import Validator from './index';
+const Validator = require('./index');
 
 let rules = {
 	mail: 'optional|email',
@@ -53,7 +53,7 @@ let data = {
 	limit: '-20',
 };
 
-let { errors } = Validator.validate(rules, data, { quotes: 'backtick'});
+let { errors } = Validator.validate(rules, data, { quotes: 'backtick' });
 if (errors) {
 	console.log(errors);
 }
