@@ -54,3 +54,11 @@
 - All these will also work with argument based validations
 - `name` validation will now also checks for short names
 - Added `fullname` validation
+
+# Version 0.6.0
+
+- `name` validation improved
+- Added quotes option: `none`, `single-quotes`, `double-quotes`, `backtick` around field names in error messages
+- Custom field name support for each field's error message using `field` keyword
+- Custom error message support for each field using `error` keyword
+- Improved docs

@@ -8,6 +8,12 @@ export interface Data {
 
 export type DataType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'bigint' | 'symbol';
 
+export interface ValidatorConfig {
+	quotes?: 'none' | 'single-quotes' | 'double-quotes' | 'backtick';
+}
+
+export type ConfigType = `field:${string}` | `error:${string}`;
+
 export type SpecificStringType =
 	| 'email'
 	| 'url'
@@ -125,6 +131,8 @@ export type Validation =
 	| `decimalmin:${number}` // string, number
 	| `decimalmax:${number}` // string, number
 	| `enums:${string}` // string, number, boolean (comma separated)
+	| `field:${string}` // set custom field name in case of error message
+	| `error:${string}` // set custom error message in case of error
 	| `arrayof:${
 			// basic data types
 			| 'string'

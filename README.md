@@ -1,8 +1,74 @@
 # Introduction
 
-**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than express-validator.
+**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than [express-validator](https://www.npmjs.com/package/express-validator).
 
 Please write any issues on github if you found any. Don't hesitate to suggest any new features if you have any idea.
+
+# Useful Links
+
+- [How to install](#how-to-install)
+- [Usage](#usage)
+- [Guide](#guide)
+  - [1. Separators](#1-separators)
+  - [2. Data types](#2-data-types)
+  - [3. Automatic String Check](#3-automatic-string-check)
+  - [4. Automatic Number Check](#4-automatic-number-check)
+  - [5. Optional and Nullable Values](#5-optional-and-nullable-values)
+  - [6. Argument based Validations](#6-argument-based-validations)
+  - [7. Regular Expression Limitations](#7-regular-expression-limitations)
+  - [8. Array Elements Validation](#8-array-elements-validation)
+  - [9. Error Options](#9-error-options)
+- [API](#api)
+  - [Nullable Types](#nullable-types)
+    - [`optional`](#1-optional)
+    - [`$atleast`](#2-atleast)
+    - [`nullable`](#3-nullable)
+  - [Data Types](#data-types)
+    - [`string`](#1-string)
+    - [`number`](#2-number)
+    - [`boolean`](#3-boolean)
+    - [`array`](#4-array)
+    - [`object`](#5-object)
+    - [`bigint`](#6-bigint)
+    - [`symbol`](#7-symbol)
+  - [Specific String Types](#specific-string-types)
+    - [`email`](#1-email)
+    - [`url`](#2-url)
+    - [`domain`](#3-domain)
+    - [`name`](#4-name)
+    - [`fullname`](#5-fullname)
+    - [`username`](#6-username)
+    - [`alpha`](#7-alpha)
+    - [`alphanumeric`](#8-alphanumeric)
+    - [`phone`](#9-phone)
+    - [`mongoid`](#10-mongoid)
+    - [`date`](#11-date)
+    - [`dateonly`](#12-dateonly)
+    - [`time`](#13-time)
+    - [`lower`](#14-lower)
+    - [`upper`](#15-upper)
+    - [`ip`](#16-ip)
+  - [Specific Number Types](#specific-number-types)
+    - [`int`](#1-int)
+    - [`positive`](#2-positive)
+    - [`negative`](#3-negative)
+    - [`natural`](#4-natural)
+    - [`whole`](#5-whole)
+  - [Argument Based Validations](#argument-based-validations)
+    - [`equal`](#1-equal)
+    - [`size`](#2-size)
+    - [`min`](#3-min)
+    - [`max`](#4-max)
+    - [`regex`](#5-regex)
+    - [`decimalsize`](#6-decimalsize)
+    - [`decimalmin`](#7-decimalmin)
+    - [`decimalmax`](#8-decimalmax)
+    - [`enums`](#9-enums)
+    - [`arrayof`](#10-arrayof)
+  - [Error Options](#error-options)
+    - [`field`](#field)
+    - [`error`](#error)
+    - [quotes config](#quotes-value)
 
 # How to install
 
@@ -16,31 +82,31 @@ npm i super-easy-validator
 
 ```js
 let rules = {
-  mail: 'optional|email',
-  phone: 'optional|phone',
-  $atleast: 'mail|phone',
-  name: 'name',
-  gender: 'enums:male,female',
-  adult: 'enums:true,false',
-  creditCard: 'string|regex:/^[0-9]{16}$/',
-  isMarried: 'boolean',
-  userId: 'mongoid',
-  profile: 'url',
-  password: 'string|min:3|max:15',
-  favoriteFoods: 'array|min:3|max:6',
-  rating: 'number|enums:1,2,3,4,5',
-  ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5',
-  score: 'number|whole',
-  accountBalance: 'number|min:0|decimalsize:2',
-  hash: 'lower',
-  hash2: 'upper',
-  serverIp: 'ip',
-  dob: 'date',
-  time: 'time',
-  address: 'object',
-  'address.pin': 'string|number|size:6',
-  'address.city': 'name',
-  limit: 'optional|string|natural'
+	mail: 'optional|email',
+	phone: 'optional|phone',
+	$atleast: 'mail|phone|error:at least one of `mail` and `phone` is required',
+	name: 'name|field:person name',
+	gender: 'enums:male,female',
+	adult: 'enums:true,false',
+	creditCard: 'string|regex:/^[0-9]{16}$/',
+	isMarried: 'boolean',
+	userId: 'mongoid',
+	profile: 'url',
+	password: 'string|min:3|max:15',
+	favoriteFoods: 'array|min:3|max:6',
+	rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
+	ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
+	score: 'number|whole',
+	accountBalance: 'number|min:0|decimalsize:2',
+	hash: 'lower',
+	hash2: 'upper',
+	serverIp: 'ip',
+	dob: 'date',
+	time: 'time',
+	address: 'object',
+	'address.pin': 'numeric|size:6',
+	'address.city': 'name',
+	limit: 'optional|string|natural',
 };
 ```
 
@@ -48,28 +114,28 @@ let rules = {
 
 ```js
 let data = {
-  name: 'test123',
-  gender: 'Male',
-  adult: true,
-  creditCard: '1987654312345678',
-  isMarried: 'no',
-  profile: 'example.com',
-  password: 'ab',
-  favoriteFoods: ['chicken', 'egg roll', 'french fries'],
-  rating: 4.5,
-  ratings: [3, 5, undefined, true, 5.67],
-  score: 234.5,
-  accountBalance: 100.345,
-  hash: 'a6g8d7Fkf9Du',
-  hash2: 'PDH78DI908g56',
-  serverIp: '8.45.23.0',
-  dob: '1996-01-10T23:50:00.0000+05:30',
-  time: '23:50',
-  address: {
-    pin: '829119',
-    city: 'Rock Port',
-  },
-  limit: '-20'
+	name: 'test123',
+	gender: 'Male',
+	adult: true,
+	creditCard: '1987654312345678',
+	isMarried: 'no',
+	profile: 'example.com',
+	password: 'ab',
+	favoriteFoods: ['chicken', 'egg roll', 'french fries'],
+	rating: 4.5,
+	ratings: [3, 5, undefined, true, 5.67],
+	score: 234.5,
+	accountBalance: 100.345,
+	hash: 'a6g8d7Fkf9Du',
+	hash2: 'PDH78DI908g56',
+	serverIp: '8.45.23.0',
+	dob: '1996-01-10T23:50:00.0000+05:30',
+	time: '23:50',
+	address: {
+		pin: '829119',
+		city: 'Rock Port',
+	},
+	limit: '-20',
 };
 ```
 
@@ -78,7 +144,7 @@ let data = {
 ```js
 const Validator = require('super-easy-validator');
 
-let { errors } = Validator.validate(rules, data);
+let { errors } = Validator.validate(rules, data, {quotes: 'backtick'});
 if (errors) {
   console.log(errors);
 }
@@ -88,27 +154,28 @@ This is how the output should look like:
 
 ```js
 [
-  'at least one of "mail", "phone" is required',
-  '"name" must be a valid name',        
-  '"gender" is invalid',
-  '"isMarried" must be boolean',        
-  '"userId" is required',
-  '"profile" must be a valid url',      
-  '"password" must have length of at least 3',
-  '"rating" is invalid',
-  '"ratings[3]" must be number',        
-  '"ratings[4]" must be a natural number',
-  '"score" must be a whole number',     
-  '"accountBalance" must have 2 decimal places',
-  '"hash" must not contains upper case letters',
-  '"hash2" must not contains lower case letters',
-  '"limit" must be a valid natural numeric string'
+  'at least one of `mail` and `phone` is required',
+  '`person name` must be a valid name',
+  '`gender` is invalid',
+  '`isMarried` must be a valid boolean',
+  '`userId` is required',
+  '`profile` must be a valid url',
+  '`password` must have length of at least 3',
+  'rating is not correct, please fix it',
+  '`ratingsList[3]` must be a valid number',
+  '`ratingsList[4]` must be a valid natural number',
+  '`score` must be a valid whole number',
+  '`accountBalance` must have 2 decimal places',
+  '`hash` must not contains upper case letters',
+  '`hash2` must not contains lower case letters',
+  '`address.city` must be a valid name',
+  '`limit` must be a valid natural numeric string'
 ]
 ```
 
 # Guide
 
-## 1. Separators:
+## 1. Separators
 
 `Validator.validate` function requires the `rules` object having key-value pairs where keys are the names of the variables whose needs to be validated. Then the values are the rules in `string` format separated by pipe `|` operator without any spaces. You can give multiple rules for any value. e.g.
 
@@ -134,7 +201,7 @@ let rules = {
 }
 ```
 
-## 2. Data Types:
+## 2. Data Types
 
 You can add the following data type check:
 
@@ -148,7 +215,7 @@ You can add the following data type check:
 
 > **NOTE:** By using the combination of `string` and `number` you can check for _numeric string_ validation. e.g. `string|natural` will check for _natural number string_. Same works for `string` and `boolean` as well.
 
-## 3. Automatic String Check:
+## 3. Automatic String Check
 
 In these cases, it will automatic check for `string` data type, and you don't need to explicitly add a `string` type check:
 
@@ -169,7 +236,7 @@ In these cases, it will automatic check for `string` data type, and you don't ne
 - `upper`
 - `ip`
 
-## 4. Automatic Number Check:
+## 4. Automatic Number Check
 
 In these cases, it will automatic check for `number` data type, and you don't need to explicitly add a `number` type check:
 
@@ -179,7 +246,7 @@ In these cases, it will automatic check for `number` data type, and you don't ne
 - `natural`
 - `whole`
 
-## 5. Optional and Nullable Values:
+## 5. Optional and Nullable Values
 
 ### Optional
 
@@ -227,7 +294,7 @@ let rules = {
 
 > Now, its not required and even can have null value.
 
-## 6. Argument based Validations:
+## 6. Argument based Validations
 
 It supports the following argument based validations (See API for more details):
 
@@ -246,7 +313,7 @@ It supports the following argument based validations (See API for more details):
 
 > **LIMITATIONS**: To know about the limitations of `decimalsize:<value>` , `decimalmin:<value>` and `decimalmax:<value>` , see the API section
 
-## 7. Regular Expression Limitations:
+## 7. Regular Expression Limitations
 
 If `string` validations has regex which itself has `|` , then it will fail for validation. You can't use pipe operator `|` for regular expressions when using string based validation rules. In those cases, use array based rules instead. e.g.
 
@@ -266,7 +333,7 @@ let rules = {
 };
 ```
 
-## 8. Array Elements Validation:
+## 8. Array Elements Validation
 
 Sometimes it is required to validate each elements in an array. For this purpose we have `arrayof:` validation. It is an argument based validation where the argument itself is a validation rule. e.g.
 
@@ -301,6 +368,71 @@ let rules = {
 ```
 
 > **NOTE:** `array` validation is automatically applied when you use `arrayof:` validation rule.
+
+## 9. Error Options
+
+In case of errors, you can change field names to be shown in error messages and you can even set your own custom error message for each fields. You can also set(or hide) the quotes type in error message
+
+- `field:<value>`: Using this you can set custom field name for a specific field. This field name will then be used in error message instead of the original field name.  Make sure it is added at the end
+
+> e.g.
+
+```js
+let rules = {
+  age: 'natural|field:person age'
+}
+```
+
+> This is will show the following error message (for age = 4.5)
+
+```txt
+`person age` must be a valid natural number
+```
+
+- `error:<value>`: Using this you can set custom error message for any field. Make sure it is added at the end
+
+> e.g.
+
+```js
+let rules = {
+  age: 'natural|error:given age is not valid'
+}
+```
+
+> This is will show the following error message (for age = 4.5)
+
+```txt
+given age is not valid
+```
+
+- `{quotes: <option>}`: This option can be set in the validate function as 3rd parameter. It will set the quotes with either single quotes, double quotes, backtick or no quotes. Possible options are: `none` (default), `single-quotes`, `double-quotes` and `backtick`.
+
+> e.g.
+
+```js
+let rules = {
+  name: 'name',
+  age: 'natural',
+};
+
+let data = {
+  name: '...',
+  age: -7
+}
+
+const {errors} = Validator.validate(rules, data, {quotes: 'double-quotes'})
+
+console.log(errors)
+```
+
+> This is will show the following error messages:
+
+```js
+[
+  '"name" must be a valid name',
+  '"age" must be a valid natural number'
+]
+```
 
 # API
 
@@ -1076,3 +1208,92 @@ let rules = {
 * `arrayof:enums:${string}`
 
 > **NOTE:** These validations follows the same rule as shown in their own sections but this time these will work for each elements in the array
+
+## Error Options
+
+In case of errors, you can change field names to be shown in error messages and you can even set your own custom error message for each fields. You can also set(or hide) the quotes type in error message
+
+### `field:`
+
+Using this you can set custom field name for a specific field in error message. It must be added at the end.
+
+> e.g.
+
+```js
+let rules = {
+  age: 'natural|field:person age'
+}
+```
+
+> This is will show the following error message (for age = 4.5)
+
+```js
+'`person age` must be a valid natural number'
+```
+
+### `error`
+
+Using this you can set custom error message for any field. Make sure it is added at the end
+
+> e.g.
+
+```js
+let rules = {
+  age: 'natural|error:given age is not valid'
+}
+```
+
+> This is will show the following error message (for age = 4.5)
+
+```js
+'given age is not valid'
+```
+
+> **Error:** If your error message contains any pipe `|` operator, it will not work as expected. In that case, you can use array based validations. e.g.
+
+```js
+let rules = {
+  name: 'name|error:name is incorrect|please add different name'
+}
+```
+
+> **FIX:** This will not work as its error message has pipe `|` operator, in that case you can use the example given below:
+
+```js
+let rules = {
+  name: ['name', 'error:name is incorrect | please add different name']
+}
+```
+
+> Now it will work fine
+
+### `{quotes: <value>}`
+
+This option can be set in the validate function as 3rd parameter. It will set the quotes with either single quotes, double quotes, backtick or no quotes. Possible options are: `none` (default), `single-quotes`, `double-quotes` and `backtick`.
+
+> e.g.
+
+```js
+let rules = {
+  name: 'name',
+  age: 'natural',
+};
+
+let data = {
+  name: '...',
+  age: -7
+}
+
+const {errors} = Validator.validate(rules, data, {quotes: 'double-quotes'})
+
+console.log(errors)
+```
+
+> This is will show the following error messages:
+
+```js
+[
+  '"name" must be a valid name',
+  '"age" must be a valid natural number'
+]
+```

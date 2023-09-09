@@ -12,5 +12,9 @@ declare module 'super-easy-validator' {
 		[key: string]: any;
 	}
 
-	export function validate(rules: ValidatorRules, data: ValidatorData): ValidatorResult;
+	export interface ValidatorConfig {
+		quotes?: 'none' | 'single-quotes' | 'double-quotes' | 'backtick';
+	}
+
+	export function validate(rules: ValidatorRules, data: ValidatorData, config?: ValidatorConfig): ValidatorResult;
 }

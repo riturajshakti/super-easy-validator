@@ -1,10 +1,10 @@
-const Validator = require('./index');
+import Validator from './index';
 
 let rules = {
 	mail: 'optional|email',
 	phone: 'optional|phone',
-	$atleast: 'mail|phone',
-	name: 'name',
+	$atleast: 'mail|phone|error:at least one of `mail` and `phone` is required',
+	name: 'name|field:person name',
 	gender: 'enums:male,female',
 	adult: 'enums:true,false',
 	creditCard: 'string|regex:/^[0-9]{16}$/',
@@ -13,8 +13,8 @@ let rules = {
 	profile: 'url',
 	password: 'string|min:3|max:15',
 	favoriteFoods: 'array|min:3|max:6',
-	rating: 'number|enums:1,2,3,4,5',
-	ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5',
+	rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
+	ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
 	score: 'number|whole',
 	accountBalance: 'number|min:0|decimalsize:2',
 	hash: 'lower',
@@ -53,27 +53,35 @@ let data = {
 	limit: '-20',
 };
 
-let { errors } = Validator.validate(rules, data);
+let { errors } = Validator.validate(rules, data, { quotes: 'backtick'});
 if (errors) {
-	// errors.forEach((e: string) => console.log(e));
 	console.log(errors);
 }
 
+// console.log(Validator.validate({
+//   name: 'name',
+//   age: 'natural',
+// }, {
+//   name: '...',
+//   age: -7
+// }, {quotes: 'double-quotes'}))
+
 // Output
 // [
-//   'at least one of "mail", "phone" is required',  
-//   '"name" must be a valid name',
-//   '"gender" is invalid',
-//   '"isMarried" must be a valid boolean',
-//   '"userId" is required',
-//   '"profile" must be a valid url',
-//   '"password" must have length of at least 3',    
-//   '"rating" is invalid',
-//   '"ratings[3]" must be a valid number',
-//   '"ratings[4]" must be a valid natural number',  
-//   '"score" must be a valid whole number',
-//   '"accountBalance" must have 2 decimal places',  
-//   '"hash" must not contains upper case letters',  
-//   '"hash2" must not contains lower case letters', 
-//   '"limit" must be a valid natural numeric string'
+//   'at least one of `mail` and `phone` is required',
+//   '`person name` must be a valid name',
+//   '`gender` is invalid',
+//   '`isMarried` must be a valid boolean',
+//   '`userId` is required',
+//   '`profile` must be a valid url',
+//   '`password` must have length of at least 3',
+//   'rating is not correct, please fix it',
+//   '`ratingsList[3]` must be a valid number',
+//   '`ratingsList[4]` must be a valid natural number',
+//   '`score` must be a valid whole number',
+//   '`accountBalance` must have 2 decimal places',
+//   '`hash` must not contains upper case letters',
+//   '`hash2` must not contains lower case letters',
+//   '`address.city` must be a valid name',
+//   '`limit` must be a valid natural numeric string'
 // ]
