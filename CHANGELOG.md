@@ -62,3 +62,11 @@
 - Custom field name support for each field's error message using `field` keyword
 - Custom error message support for each field using `error` keyword
 - Improved docs
+
+# Version 0.7.0
+
+- Added: `uuid` validation
+- `$atleast` now supports array based rule for validation of multiple group of fields
+- Added: `$atmost` validation
+- `$atmost` also supports array based rule for validation of multiple group of fields
+- Added `size:` keyword support for `$atleast` and `$atmost` for custom field count validation

@@ -1,6 +1,6 @@
 {
 	"name": "super-easy-validator",
-	"version": "0.6.1",
+	"version": "0.7.0",
 	"description": "A super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than express-validator",
 	"main": "dist/index.js",
 	"types": "types/index.d.ts",
@@ -15,9 +15,9 @@
 	"author": "Rituraj Shakti",
 	"license": "MIT",
 	"devDependencies": {
-		"@types/node": "^20.2.3",
+		"@types/node": "^20.6.2",
 		"nodemon": "^2.0.22",
-		"typescript": "^5.0.4"
+		"typescript": "^5.2.2"
 	},
 	"keywords": [
 		"field",
@@ -28,6 +28,7 @@
 		"validator",
 		"express-validator",
 		"express validator",
+		"zod",
 		"validation",
 		"validation rule",
 		"validation rules",
@@ -61,6 +62,5 @@
 		"data validation tool",
 		"data validation utility",
 		"data validation framework"
-	],
-	"dependencies": {}
+	]
 }

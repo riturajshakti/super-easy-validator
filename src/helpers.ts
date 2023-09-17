@@ -13,15 +13,21 @@ export function getField(validations: Validation[], key: string) {
 }
 
 export function getError(validations: Validation[]) {
-  // if(/\[[0-9]+\]$/.test(key)) {
-  //   return;
-  // }
   let validation = validations.find(e => e.startsWith('error:'));
   if(!validation) {
     return;
   }
 
   return validation.slice('error:'.length);
+}
+
+export function getSize(validations: Validation[]): number {
+  let validation = validations.find(e => e.startsWith('size:'));
+  if(!validation) {
+    return 1;
+  }
+
+  return +validation.slice('size:'.length);
 }
 
 export function getPropByString(obj: Data, propString: string) {

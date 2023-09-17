@@ -1,5 +1,5 @@
 import { quotes } from './config';
-import { getError, getField, getPropByString } from './helpers';
+import { getError, getField, getPropByString, getSize } from './helpers';
 import {
 	ArrayType,
 	ConstraintType,
@@ -28,10 +28,12 @@ function validate(rules: Rules, data: Data, config: ValidatorConfig = defaultVal
 
 			let dataToSend = !key.includes('.') ? data[key] : getPropByString(data, key);
 
-			if (key !== '$atleast') {
-				validateSingleData(key, dataToSend, validations, errors);
+			if (key === '$atleast') {
+				validateAtleastData(data, value, errors);
+			} else if (key === '$atmost') {
+				validateAtmostData(data, value, errors);
 			} else {
-				validateAtleastData(data, validations as Validation[], errors);
+				validateSingleData(key, dataToSend, validations, errors);
 			}
 
 			allErrors.push(...errors);
@@ -77,9 +79,9 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 			}
 		}
 
-		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
+		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {
@@ -128,15 +130,79 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 	}
 }
 
-function validateAtleastData(data: Data, validations: Validation[], errors: string[]) {
-	let error = getError(validations)
-	for (let key of validations) {
-		let value = !key.includes('.') ? data[key] : getPropByString(data, key);
-		if (value !== null && value !== undefined) {
+function validateAtleastData(data: Data, value: string[] | string, errors: string[]) {
+	let validateAtleast = (data: Data, validations: Validation[], errors: string[]) => {
+		let error = getError(validations)
+		let size = getSize(validations);
+		let count = 0;
+
+		for (let key of validations) {
+			let value = !key.includes('.') ? data[key] : getPropByString(data, key);
+			if (value !== null && value !== undefined) {
+				count++;
+			}
+		}
+		if(count >= size) {
 			return;
 		}
+
+		const variables = validations.filter(e => !e.includes(':'));
+		const variablesString = variables.slice(0, -1).map((e) => `"${e}"`).join(', ')
+		const sizeString = size === 1 ? 'one' : size;
+		const andString = variables.length > 1 ? 'and' : '';
+		const lastVariable = variables.at(-1)
+		const isAre = size === 1 ? 'is' : 'are'
+		const message = `at least ${sizeString} of ${variablesString} ${andString} "${lastVariable}" ${isAre} required`;
+		errors.push(error ?? message);
 	}
-	errors.push(error ?? `at least one of ${validations.map((e) => `"${e}"`).join(', ')} is required`);
+
+	let validations: Validation[];
+	if(Array.isArray(value)) {
+		for(let e of value) {
+			validations = e.split('|') as Validation[];
+			validateAtleast(data, validations, errors);
+		}
+	} else {
+		validations = value.split('|') as Validation[];
+		validateAtleast(data, validations, errors);
+	}
+}
+
+function validateAtmostData(data: Data, value: string[] | string, errors: string[]) {
+	let validateAtmost = (data: Data, validations: Validation[], errors: string[]) => {
+		let error = getError(validations)
+		let size = getSize(validations);
+		let count = 0;
+
+		for (let key of validations) {
+			let value = !key.includes('.') ? data[key] : getPropByString(data, key);
+			if (value !== null && value !== undefined) {
+				count++;
+			}
+		}
+		if(count <= size) {
+			return;
+		}
+
+		const variables = validations.filter(e => !e.includes(':'));
+		const variablesString = variables.slice(0, -1).map((e) => `"${e}"`).join(', ')
+		const sizeString = size === 1 ? 'one' : size;
+		const andString = variables.length > 1 ? 'and' : '';
+		const lastVariable = variables.at(-1)
+		const message = `at most ${sizeString} of ${variablesString} ${andString} "${lastVariable}" can be given`;
+		errors.push(error ?? message);
+	}
+
+	let validations: Validation[];
+	if(Array.isArray(value)) {
+		for(let e of value) {
+			validations = e.split('|') as Validation[];
+			validateAtmost(data, validations, errors);
+		}
+	} else {
+		validations = value.split('|') as Validation[];
+		validateAtmost(data, validations, errors);
+	}
 }
 
 function checkDataType(
@@ -273,6 +339,11 @@ function checkSpecificStringType(
 
 	if (specificType === 'phone' && !/^(?:\+\d{1,3}\s?)?(?:\(\d+\))?(?:\d+\s?)+(?:\d{1,4})$/.test(value)) {
 		errors.push(error ?? `"${field ?? key}" must be a valid phone`);
+		return;
+	}
+
+	if (specificType === 'uuid' && !/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/.test(value)) {
+		errors.push(error ?? `"${field ?? key}" must be a valid uuid`);
 		return;
 	}
 
@@ -763,9 +834,9 @@ function checkSpecificArrayType(
 			checkDataType(elementKey, element, validation as DataType, previousValidations, validations, newErrors);
 		}
 
-		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip
+		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {

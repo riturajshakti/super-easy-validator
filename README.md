@@ -1,6 +1,6 @@
 # Introduction
 
-**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than [express-validator](https://www.npmjs.com/package/express-validator).
+**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than [express-validator](https://www.npmjs.com/package/express-validator) and [zod](https://www.npmjs.com/package/zod).
 
 Please write any issues on github if you found any. Don't hesitate to suggest any new features if you have any idea.
 
@@ -19,10 +19,11 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
   - [8. Array Elements Validation](#8-array-elements-validation)
   - [9. Error Options](#9-error-options)
 - [API](#api)
-  - [Nullable Types](#nullable-types)
+  - [Optional and Nullable Types](#optional-and-nullable-types)
     - [`optional`](#1-optional)
-    - [`$atleast`](#2-atleast)
-    - [`nullable`](#3-nullable)
+    - [`nullable`](#2-nullable)
+    - [`$atleast`](#3-atleast)
+    - [`$atmost`](#4-atmost)
   - [Data Types](#data-types)
     - [`string`](#1-string)
     - [`number`](#2-number)
@@ -48,6 +49,7 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
     - [`lower`](#14-lower)
     - [`upper`](#15-upper)
     - [`ip`](#16-ip)
+    - [`uuid`](#17-uuid)
   - [Specific Number Types](#specific-number-types)
     - [`int`](#1-int)
     - [`positive`](#2-positive)
@@ -84,10 +86,12 @@ npm i super-easy-validator
 let rules = {
 	mail: 'optional|email',
 	phone: 'optional|phone',
-	$atleast: 'mail|phone|error:at least one of `mail` and `phone` is required',
+	$atleast: 'mail|phone',
+	$atmost: 'mail|phone|size:1',
 	name: 'name|field:person name',
 	gender: 'enums:male,female',
 	adult: 'enums:true,false',
+	id: 'uuid',
 	creditCard: 'string|regex:/^[0-9]{16}$/',
 	isMarried: 'boolean',
 	userId: 'mongoid',
@@ -104,10 +108,10 @@ let rules = {
 	dob: 'date',
 	time: 'time',
 	address: 'object',
-	'address.pin': 'numeric|size:6',
+	'address.pin': 'string|natural|size:6',
 	'address.city': 'name',
 	limit: 'optional|string|natural',
-};
+}
 ```
 
 - **Step 2:** Then you will need an object whose data you need to validate.
@@ -117,6 +121,7 @@ let data = {
 	name: 'test123',
 	gender: 'Male',
 	adult: true,
+	id: '123e4567-e89b-12d3-a456-426655440000',
 	creditCard: '1987654312345678',
 	isMarried: 'no',
 	profile: 'example.com',
@@ -136,7 +141,7 @@ let data = {
 		city: 'Rock Port',
 	},
 	limit: '-20',
-};
+}
 ```
 
 - **Step 3:** Then, the final step is to validate the data using the rules created above:
@@ -154,22 +159,22 @@ This is how the output should look like:
 
 ```js
 [
-  'at least one of `mail` and `phone` is required',
+  'at least one of `mail` and `phone` is required', 
   '`person name` must be a valid name',
   '`gender` is invalid',
   '`isMarried` must be a valid boolean',
   '`userId` is required',
   '`profile` must be a valid url',
-  '`password` must have length of at least 3',
+  '`password` must have length of at least 3',      
   'rating is not correct, please fix it',
-  '`ratingsList[3]` must be a valid number',
+  '`ratingsList[3]` must be a valid number',        
   '`ratingsList[4]` must be a valid natural number',
   '`score` must be a valid whole number',
-  '`accountBalance` must have 2 decimal places',
-  '`hash` must not contains upper case letters',
-  '`hash2` must not contains lower case letters',
+  '`accountBalance` must have 2 decimal places',    
+  '`hash` must not contains upper case letters',    
+  '`hash2` must not contains lower case letters',   
   '`address.city` must be a valid name',
-  '`limit` must be a valid natural numeric string'
+  '`limit` must be a valid natural numeric string'  
 ]
 ```
 
@@ -229,6 +234,7 @@ In these cases, it will automatic check for `string` data type, and you don't ne
 - `alpha`
 - `alphanumeric`
 - `mongoid`
+- `uuid`
 - `date`
 - `dateonly`
 - `time`
@@ -260,18 +266,6 @@ let rules = {
 
 In this case, `phone` can be optional (means this field can be absent).
 
-### Atleast
-
-Some times it is required to have at least one field among the list of few optional fields. Let's say we have optional `email` and `phone` of a user but atleast one of them should always be present. In that case we can use `$atleast`, this will make sure we have atleast `email` or `phone` field. e.g.
-
-```js
-let rules = {
-  email: 'optional|email',
-  phone: 'optional|phone',
-  $atleast: 'email|phone'
-};
-```
-
 ### Nullable
 
 If you want any field to be `nullable` , then use `nullable` validation, this make sure that the field can be null. e.g.
@@ -293,6 +287,62 @@ let rules = {
 ```
 
 > Now, its not required and even can have null value.
+
+### Atleast
+
+Some times it is required to have at least one field among the list of few optional fields. Let's say we have optional `email` and `phone` of a user but atleast one of them should always be present. In that case we can use `$atleast`, this will make sure we have atleast `email` or `phone` field. e.g.
+
+```js
+let rules = {
+  email: 'optional|email',
+  phone: 'optional|phone',
+  $atleast: 'email|phone'
+};
+```
+
+Suppose you want at least `n` number of fields to be present from a set of fields. You can achieve this using `size:` keyword. e.g.
+
+```js
+let rules = {
+  name: 'optional|name',
+  email: 'optional|email',
+  username: 'optional|username',
+  phone: 'optional|phone',
+  $atleast: 'name|email|username|phone|size:2'
+};
+```
+
+This example accepts 4 optional fields out of which any 2 is required.
+
+> See the [API Section](#3-atleast) for the validation of more than one group of fields
+
+### Atmost
+
+Some times it is required to have at most one field among the list of few optional fields. Let's say we have optional `email` and `phone` of a user but only one of them should be present not both. In that case we can use `$atmost`, this will make sure we have atmost one of `email` or `phone` field. e.g.
+
+```js
+let rules = {
+  email: 'optional|email',
+  phone: 'optional|phone',
+  $atmost: 'email|phone'
+};
+```
+
+Suppose you want at most `n` fields from a set of fields. You can achieve this using `size:` keyword. e.g.
+
+```js
+let rules = {
+  name: 'optional|name',
+  email: 'optional|email',
+  username: 'optional|username',
+  phone: 'optional|phone',
+  $atmost: 'name|email|username|phone|size:3'
+};
+```
+
+This example will accept only 3 fields from 4 optional fields. It will raise error if you try to give more than 3 fields among `name`, `email`, `username`, `phone`
+
+> See the [API Section](#4-atmost) for the validation of more than one group of fields
 
 ## 6. Argument based Validations
 
@@ -436,7 +486,7 @@ console.log(errors)
 
 # API
 
-## Nullable Types
+## Optional and Nullable Types
 
 ### 1. **`optional`**
 
@@ -450,32 +500,7 @@ let rules = {
 
 In the example above, organization field can be absent or it must be _string_.
 
-### 2. **`$atleast`**
-
-Some times it is required to have at least one field among the list of few optional fields. Suppose we have optional `otpUnlock`, `faceUnlock` and `pinUnlock` fields, but atleast one of them is required. In that case we can use `$atleast`. e.g.
-
-```js
-let rules = {
-  otpUnlock: 'optional|boolean',
-  faceUnlock: 'optional|boolean',
-  pinUnlock: 'optional|boolean',
-  $atleast: 'otpUnlock|faceUnlock|pinUnlock'
-};
-```
-
-or, you can even pass these fields in array:
-
-```js
-let rules = {
-  otpUnlock: 'optional|boolean',
-  faceUnlock: 'optional|boolean',
-  pinUnlock: 'optional|boolean',
-  $atleast: ['otpUnlock', 'faceUnlock', 'pinUnlock']
-};
-```
-This will make sure at least one of the 3 is `true`.
-
-### 3. **`nullable`**
+### 2. **`nullable`**
 
 `nullable` validation makes the variable nullable means it can be _null_.
 
@@ -496,6 +521,96 @@ let rules = {
 ```
 
 > In the example above, the `age` could be absent, _null_ or even any number.
+
+### 3. **`$atleast`**
+
+Some times it is required to have at least one field among the list of few optional fields. Suppose we have optional `otpUnlock`, `faceUnlock` and `pinUnlock` fields, but atleast one of them is required. In that case we can use `$atleast`. e.g.
+
+```js
+let rules = {
+  otpUnlock: 'optional|boolean',
+  faceUnlock: 'optional|boolean',
+  pinUnlock: 'optional|boolean',
+  $atleast: 'otpUnlock|faceUnlock|pinUnlock'
+};
+```
+
+This will make sure at least one of the 3 is `true`.
+
+Suppose you want at least `n` number of fields to be present from a set of fields. You can achieve this using `size:` keyword. e.g.
+
+```js
+let rules = {
+  name: 'optional|name',
+  email: 'optional|email',
+  username: 'optional|username',
+  phone: 'optional|phone',
+  $atleast: 'name|email|username|phone|size:2'
+};
+```
+
+This example accepts 4 optional fields out of which any 2 is required.
+
+Now, suppose you need check from a group of fields multiple time. i.e. Lets say there is a situation where any 2 is required from a set of (`name`, `age`, `gender`), not only this any 1 is also required among (`id`, `email`, `username`). Then, you can use this array based validation rule as shown in this example:
+
+```js
+let rules = {
+  name: 'optional|name',
+  age: 'optional|natural|min:18',
+  gender: 'optional|enums:male,female',
+  id: 'optional|uuid',
+  email: 'optional|email',
+  username: 'optional|username',
+  $atleast: ['name|age|gender|size:2', 'id|email|username']
+}
+```
+
+This validation rule create separate errors for the group of (`name`, `age`, `gender`) and (`id`, `email`, `username`)
+
+### 4. **`$atmost`**
+
+Some times it is required to have at most one field among the list of few optional fields. Suppose we have optional `otpUnlock`, `faceUnlock` and `pinUnlock` fields, but atmost one of them is allowed at a time. In that case we can use `$atmost`. e.g.
+
+```js
+let rules = {
+  otpUnlock: 'optional|boolean',
+  faceUnlock: 'optional|boolean',
+  pinUnlock: 'optional|boolean',
+  $atmost: 'otpUnlock|faceUnlock|pinUnlock'
+};
+```
+
+This will make sure at most one of the 3 fields is given.
+
+Suppose you want at most `n` number of fields to be present from a set of fields. You can achieve this using `size:` keyword. e.g.
+
+```js
+let rules = {
+  name: 'optional|name',
+  email: 'optional|email',
+  username: 'optional|username',
+  phone: 'optional|phone',
+  $atmost: 'name|email|username|phone|size:2'
+};
+```
+
+This example accepts 4 optional fields out of which only 2 can be given at a time.
+
+Now, suppose you need check from a group of fields multiple time. i.e. Lets say there is a situation where only 2 is required from a set of (`name`, `age`, `gender`), also, only 1 is required among (`id`, `email`, `username`). Then, you can use this array based validation rule as shown in this example:
+
+```js
+let rules = {
+  name: 'optional|name',
+  age: 'optional|natural|min:18',
+  gender: 'optional|enums:male,female',
+  id: 'optional|uuid',
+  email: 'optional|email',
+  username: 'optional|username',
+  $atmost: ['name|age|gender|size:2', 'id|email|username']
+}
+```
+
+This validation rule create separate errors for the group of (`name`, `age`, `gender`) and (`id`, `email`, `username`)
 
 ## Data Types
 
@@ -779,6 +894,16 @@ let rules = {
 ```js
 let rules = {
   name: 'ip',
+};
+```
+
+### 17. **`uuid`**
+
+`uuid` validation is used to check if a string is valid UUID (used in SQL Table IDs). e.g.
+
+```js
+let rules = {
+  userId: 'uuid',
 };
 ```
 
