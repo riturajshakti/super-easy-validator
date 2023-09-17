@@ -206,6 +206,8 @@ let rules = {
 }
 ```
 
+> Also note that array based rules works differently for `$atleast` and `$atmost` keyword. For more details see the API Section of [`$atleast`](#3-atleast) and [`$atmost`](#4-atmost)
+
 ## 2. Data Types
 
 You can add the following data type check:
