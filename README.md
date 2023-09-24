@@ -8,6 +8,12 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
 
 - [How to install](#how-to-install)
 - [Usage](#usage)
+  - [Basic usage step by step](#1-basic-usage-step-by-step)
+    - [Step 1: Creating Validation Rules](#step-1-creating-validations-rules)
+    - [Step 2: Data required](#step-2-data-required)
+    - [Step 3: Validating Data](#step-3-validating-data)
+    - [Final Output](#final-output)
+  - [Data validation of request query in express GET API](#2-data-validation-of-request-query-in-express)
 - [Guide](#guide)
   - [1. Separators](#1-separators)
   - [2. Data types](#2-data-types)
@@ -80,103 +86,161 @@ npm i super-easy-validator
 
 # Usage
 
-- **Step 1:** Create a `rules` object first. This will later be used for validating data.
+## 1. Basic Usage Step-By-Step
+
+### **Step 1**: Creating validations rules
+
+This validation rules object will later be used for validating data.
 
 ```js
 let rules = {
-	mail: 'optional|email',
-	phone: 'optional|phone',
-	$atleast: 'mail|phone',
-	$atmost: 'mail|phone|size:1',
-	name: 'name|field:person name',
-	gender: 'enums:male,female',
-	adult: 'enums:true,false',
-	id: 'uuid',
-	creditCard: 'string|regex:/^[0-9]{16}$/',
-	isMarried: 'boolean',
-	userId: 'mongoid',
-	profile: 'url',
-	password: 'string|min:3|max:15',
-	favoriteFoods: 'array|min:3|max:6',
-	rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
-	ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
-	score: 'number|whole',
-	accountBalance: 'number|min:0|decimalsize:2',
-	hash: 'lower',
-	hash2: 'upper',
-	serverIp: 'ip',
-	dob: 'date',
-	time: 'time',
-	address: 'object',
-	'address.pin': 'string|natural|size:6',
-	'address.city': 'name',
-	limit: 'optional|string|natural',
+  mail: 'optional|email',
+  phone: 'optional|phone',
+  $atleast: 'mail|phone',
+  $atmost: 'mail|phone|size:1',
+  name: 'name|field:person name',
+  gender: 'enums:male,female',
+  adult: 'enums:true,false',
+  id: 'uuid',
+  creditCard: 'string|regex:/^[0-9]{16}$/',
+  isMarried: 'boolean',
+  userId: 'mongoid',
+  profile: 'url',
+  password: 'string|min:3|max:15',
+  favoriteFoods: 'array|min:3|max:6',
+  rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
+  ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
+  score: 'number|whole',
+  accountBalance: 'number|min:0|decimalsize:2',
+  hash: 'lower',
+  hash2: 'upper',
+  serverIp: 'ip',
+  dob: 'date',
+  time: 'time',
+  address: 'object',
+  'address.pin': 'string|natural|size:6',
+  'address.city': 'name',
+  limit: 'optional|string|natural',
 }
 ```
 
-- **Step 2:** Then you will need an object whose data you need to validate.
+### **Step 2**: Data Required
+
+Then you will need an object, whose fields you need to validate. The rules created in previous step were based on this data object:
 
 ```js
 let data = {
-	name: 'test123',
-	gender: 'Male',
-	adult: true,
-	id: '123e4567-e89b-12d3-a456-426655440000',
-	creditCard: '1987654312345678',
-	isMarried: 'no',
-	profile: 'example.com',
-	password: 'ab',
-	favoriteFoods: ['chicken', 'egg roll', 'french fries'],
-	rating: 4.5,
-	ratings: [3, 5, undefined, true, 5.67],
-	score: 234.5,
-	accountBalance: 100.345,
-	hash: 'a6g8d7Fkf9Du',
-	hash2: 'PDH78DI908g56',
-	serverIp: '8.45.23.0',
-	dob: '1996-01-10T23:50:00.0000+05:30',
-	time: '23:50',
-	address: {
-		pin: '829119',
-		city: 'Rock Port',
-	},
-	limit: '-20',
+  name: 'test123',
+  gender: 'Male',
+  adult: true,
+  id: '123e4567-e89b-12d3-a456-426655440000',
+  creditCard: '1987654312345678',
+  isMarried: 'no',
+  profile: 'example.com',
+  password: 'ab',
+  favoriteFoods: ['chicken', 'egg roll', 'french fries'],
+  rating: 4.5,
+  ratings: [3, 5, undefined, true, 5.67],
+  score: 234.5,
+  accountBalance: 100.345,
+  hash: 'a6g8d7Fkf9Du',
+  hash2: 'PDH78DI908g56',
+  serverIp: '8.45.23.0',
+  dob: '1996-01-10T23:50:00.0000+05:30',
+  time: '23:50',
+  address: {
+    pin: '829119',
+    city: 'Rock Port',
+  },
+  limit: '-20',
 }
 ```
 
-- **Step 3:** Then, the final step is to validate the data using the rules created above:
+### **Step 3**: Validating data
+
+Then, the final step is to validate the data using the rules created in step 1:
 
 ```js
 const Validator = require('super-easy-validator');
 
-let { errors } = Validator.validate(rules, data, {quotes: 'backtick'});
+let { errors } = Validator.validate(rules, data);
 if (errors) {
   console.log(errors);
 }
 ```
 
-This is how the output should look like:
+### Final output
+
+This is how the final output should look like:
 
 ```js
 [
-  'at least one of `mail` and `phone` is required', 
-  '`person name` must be a valid name',
-  '`gender` is invalid',
-  '`isMarried` must be a valid boolean',
-  '`userId` is required',
-  '`profile` must be a valid url',
-  '`password` must have length of at least 3',      
+  'at least one of mail and phone is required', 
+  'person name must be a valid name',
+  'gender is invalid',
+  'isMarried must be a valid boolean',
+  'userId is required',
+  'profile must be a valid url',
+  'password must have length of at least 3',      
   'rating is not correct, please fix it',
-  '`ratingsList[3]` must be a valid number',        
-  '`ratingsList[4]` must be a valid natural number',
-  '`score` must be a valid whole number',
-  '`accountBalance` must have 2 decimal places',    
-  '`hash` must not contains upper case letters',    
-  '`hash2` must not contains lower case letters',   
-  '`address.city` must be a valid name',
-  '`limit` must be a valid natural numeric string'  
+  'ratingsList[3] must be a valid number',        
+  'ratingsList[4] must be a valid natural number',
+  'score must be a valid whole number',
+  'accountBalance must have 2 decimal places',    
+  'hash must not contains upper case letters',    
+  'hash2 must not contains lower case letters',   
+  'address.city must be a valid name',
+  'limit must be a valid natural numeric string'  
 ]
 ```
+
+> **NOTE:** You could also have written:
+
+```js
+let { errors } = Validator.validate(rules, data, {quotes: 'backtick'});
+```
+
+> If you want quotes to be added around each field names in error messages. For more info, see [quotes API section](#quotes-value).
+
+## 2. Data Validation of request query in express
+
+Suppose we need to validate some fields which are all present in `req.query` (request query) in [express](https://www.npmjs.com/package/express) GET API. As you already know every fields in `req.query` is string by default. Also in most cases these fields are optional, so we have to make sure to consider these things before writing validation. Here is a proper example.
+
+```js
+const {validate} = require('super-easy-validator');
+
+function validateGetProducts(req, res, next) {
+  try {
+    let rules = {
+      limit: 'optional|string|natural|max:100',
+      page: 'optional|string|natural',
+      searchKey: 'optional|string|min:1',
+      productId: 'optional|mongoid',
+      withProduct: 'optional|string|boolean',
+      expiryMin: 'optional|date',
+      expiryMax: 'optional|date',
+      priceMin: 'optional|string|positive',
+      priceMax: 'optional|string|positive',
+      createdAtMin: 'optional|date',
+      createdAtMax: 'optional|date',
+      sortBy: 'optional|enums:expiry,price,createdAt',
+      sortOrder: 'optional|enums:ascending,descending',
+    }
+
+    const { errors } = validate(rules, req.query);
+    if(errors) {
+      return res.status(400).json({ message: errors[0] });
+    }
+
+    return next();
+  } catch (error) {
+    console.log(errors);
+    return res.status(500).json({ message: 'server error' })
+  }
+}
+```
+
+Here we have assumed every fields in request query to be optional and also we have added string check before checking any other thing (some fields like `productId`, `expiryMin`, `createdAtMax`, etc will automatic check for strings, so need to write `string` rule explicitly in those)
 
 # Guide
 
@@ -1061,7 +1125,7 @@ let rules = {
 
 `min:<value>` validation is used to check if a field has minimum of value `<value>` .
 
-- **For numbers**, it will check if the number is more than or equal to `<value>`.
+- **For numbers & numeric strings**, it will check if the number is more than or equal to `<value>`.
 - **For strings**, it will check if the string length is more than or equal to `<value>`.
 - **For arrays**, it will check if the array length is more than or equal to `<value>`.
 - **For date string**, it will check if the date is more than or equal to `<value>`. Make sure that the date should be in ISO string format.
@@ -1071,7 +1135,7 @@ e.g.
 ```js
 let rules = {
   foods: 'array|min:3', // array should have minimum 3 elements
-  otp: 'string|natural|min:6', // natural number string should have minimum 6 digits
+  otp: 'string|natural|min:6', // natural number string with minimum value 6
   pinCode: 'number|min:5', // pinCode should be >= 5
   dob: 'date|min:2023-01:01T11:50:34.9876Z', // date should be >= '2023-01:01T11:50:34.9876Z'
   field: 'min:4', // Auto detect
@@ -1084,7 +1148,7 @@ let rules = {
 
 `max:<value>` validation is used to check if a field has maximum of value `<value>` .
 
-- **For numbers**, it will check if the number is less than or equal to `<value>`.
+- **For numbers & numeric strings**, it will check if the number is less than or equal to `<value>`.
 - **For strings**, it will check if the string length is less than or equal to `<value>`.
 - **For arrays**, it will check if the array length is less than or equal to `<value>`.
 - **For date string**, it will check if the date is less than or equal to `<value>`. Make sure that the date should be in ISO string format.
@@ -1094,7 +1158,7 @@ e.g.
 ```js
 let rules = {
   foods: 'array|max:3', // array should have maximum 3 elements
-  otp: 'string|natural|max:6', // natural number string should have maximum 6 digits
+  otp: 'string|natural|max:6', // natural number string should with maximum value 6
   pinCode: 'number|max:5', // pinCode should be <= 5
   dob: 'date|max:2023-01:01T11:50:34.9876Z', // date should be <= '2023-01:01T11:50:34.9876Z'
   field: 'max:4', // Auto detect

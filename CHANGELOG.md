@@ -70,3 +70,8 @@
 - Added: `$atmost` validation
 - `$atmost` also supports array based rule for validation of multiple group of fields
 - Added `size:` keyword support for `$atleast` and `$atmost` for custom field count validation
+
+# Version 0.7.1
+
+- Minor improvements in `README.md` documentation
+- Added Express GET API validation example

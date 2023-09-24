@@ -1,6 +1,6 @@
 {
 	"name": "super-easy-validator",
-	"version": "0.7.0",
+	"version": "0.7.1",
 	"description": "A super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than express-validator",
 	"main": "dist/index.js",
 	"types": "types/index.d.ts",
@@ -28,6 +28,7 @@
 		"validator",
 		"express-validator",
 		"express validator",
+		"express",
 		"zod",
 		"validation",
 		"validation rule",
