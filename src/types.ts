@@ -1,5 +1,5 @@
 export type Rules = {
-	[key: string]: string | string[];
+	[key: string]: string | string[] | [Rules] | Rules;
 };
 
 export interface Data {
