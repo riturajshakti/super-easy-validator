@@ -75,3 +75,9 @@
 
 - Minor improvements in `README.md` documentation
 - Added Express GET API validation example
+
+# Version 0.7.2
+
+- New Feature: `strict` option in `ValidatorConfig`
+- Minor changes in `README.md`
+- Bug Fix: Missing types checks of array based validation

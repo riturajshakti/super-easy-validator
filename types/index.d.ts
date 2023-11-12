@@ -5,7 +5,7 @@ declare module 'super-easy-validator' {
 	}
 
 	export interface ValidatorRules {
-		[key: string]: string;
+		[key: string]: string | string[];
 	}
 
 	export interface ValidatorData {
@@ -14,6 +14,7 @@ declare module 'super-easy-validator' {
 
 	export interface ValidatorConfig {
 		quotes?: 'none' | 'single-quotes' | 'double-quotes' | 'backtick';
+		strict?: boolean;
 	}
 
 	export function validate(rules: ValidatorRules, data: ValidatorData, config?: ValidatorConfig): ValidatorResult;

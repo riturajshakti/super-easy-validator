@@ -27,6 +27,10 @@ let rules = {
   address: 'object',
   'address.pin': 'string|natural|size:6',
   'address.city': 'name',
+  'address.country': 'object',
+  'address.country.code': 'string|upper|size:2',
+  person: 'object',
+  'person.address': 'object',
   limit: 'optional|string|natural|min:100',
 };
 
@@ -54,20 +58,17 @@ let data = {
     city: 'Rock Port',
   },
   limit: '90',
+  test: false,
+  okBye: 78
 };
 
-let { errors } = Validator.validate(rules, data, { quotes: 'backtick' });
+let { errors } = Validator.validate(rules, data, {
+  quotes: 'backtick',
+  strict: true,
+});
 if (errors) {
   console.log(errors);
 }
-
-// console.log(Validator.validate({
-//   name: 'name',
-//   age: 'natural',
-// }, {
-//   name: '...',
-//   age: -7
-// }, {quotes: 'double-quotes'}))
 
 // Output
 // [

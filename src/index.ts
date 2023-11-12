@@ -38,6 +38,9 @@ function validate(rules: Rules, data: Data, config: ValidatorConfig = defaultVal
 
 			allErrors.push(...errors);
 		}
+		if(config.strict) {
+			validateStrictCheck(rules, data, allErrors);
+		}
 
 		const quote = quotes[config.quotes ?? 'none'];
 		allErrors = allErrors.map(e => e.replace(/"/g, quote))
@@ -887,6 +890,18 @@ function checkSpecificArrayType(
 		// }
 
 		errors.push(...newErrors);
+	}
+}
+
+function validateStrictCheck(rules: Rules, data: Data, errors: string[]) {
+	let ruleKeys = Object.keys(rules);
+	let dataKeys = Object.keys(data);
+	let dataTopLevelKeys = dataKeys.filter(e => !e.includes('.'));
+	let keys = ruleKeys.filter(e => !e.includes('.') && !['$atleast', '$atmost'].includes(e))
+	for(let e of dataTopLevelKeys) {
+		if(!keys.includes(e)) {
+			errors.push(`"${e}" is not required`);
+		}
 	}
 }
 

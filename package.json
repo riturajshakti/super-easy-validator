@@ -1,6 +1,6 @@
 {
 	"name": "super-easy-validator",
-	"version": "0.7.1",
+	"version": "0.7.2",
 	"description": "A super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than express-validator",
 	"main": "dist/index.js",
 	"types": "types/index.d.ts",
@@ -10,6 +10,7 @@
 	},
 	"scripts": {
 		"build": "npx tsc",
+		"watch": "npx tsc -w",
 		"dev": "nodemon dist/test.js"
 	},
 	"author": "Rituraj Shakti",

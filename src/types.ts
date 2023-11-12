@@ -10,6 +10,7 @@ export type DataType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'b
 
 export interface ValidatorConfig {
 	quotes?: 'none' | 'single-quotes' | 'double-quotes' | 'backtick';
+	strict?: boolean;
 }
 
 export type ConfigType = `field:${string}` | `error:${string}`;

@@ -10,8 +10,7 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
 - [Usage](#usage)
   - [Basic usage step by step](#1-basic-usage-step-by-step)
     - [Step 1: Creating Validation Rules](#step-1-creating-validations-rules)
-    - [Step 2: Data required](#step-2-data-required)
-    - [Step 3: Validating Data](#step-3-validating-data)
+    - [Step 2: Validating Data](#step-2-validating-data)
     - [Final Output](#final-output)
   - [Data validation of request query in express GET API](#2-data-validation-of-request-query-in-express)
 - [Guide](#guide)
@@ -24,6 +23,7 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
   - [7. Regular Expression Limitations](#7-regular-expression-limitations)
   - [8. Array Elements Validation](#8-array-elements-validation)
   - [9. Error Options](#9-error-options)
+  - [10. Strict Check](#10-strict-check)
 - [API](#api)
   - [Optional and Nullable Types](#optional-and-nullable-types)
     - [`optional`](#1-optional)
@@ -88,9 +88,41 @@ npm i super-easy-validator
 
 ## 1. Basic Usage Step-By-Step
 
+Suppose we need to validate the following data:
+
+```js
+const data = {
+  name: 'test123',
+  gender: 'Male',
+  adult: true,
+  id: '123e4567-e89b-12d3-a456-426655440000',
+  creditCard: '1987654312345678',
+  isMarried: 'no',
+  profile: 'example.com',
+  password: 'ab',
+  favoriteFoods: ['chicken', 'egg roll', 'french fries'],
+  rating: 4.5,
+  ratings: [3, 5, undefined, true, 5.67],
+  score: 234.5,
+  accountBalance: 100.345,
+  hash: 'a6g8d7Fkf9Du',
+  hash2: 'PDH78DI908g56',
+  serverIp: '8.45.23.0',
+  dob: '1996-01-10T23:50:00.0000+05:30',
+  time: '23:50',
+  address: {
+    pin: '829119',
+    city: 'Rock Port',
+  },
+  limit: '-20',
+}
+```
+
+Here is the step by step guide to validate the above data:
+
 ### **Step 1**: Creating validations rules
 
-This validation rules object will later be used for validating data.
+At first we need to create the validation rules which is just an `Record` of key value pairs. This validation rules object will later be used for validating data.
 
 ```js
 let rules = {
@@ -124,41 +156,9 @@ let rules = {
 }
 ```
 
-### **Step 2**: Data Required
+### **Step 2**: Validating data
 
-Then you will need an object, whose fields you need to validate. The rules created in previous step were based on this data object:
-
-```js
-let data = {
-  name: 'test123',
-  gender: 'Male',
-  adult: true,
-  id: '123e4567-e89b-12d3-a456-426655440000',
-  creditCard: '1987654312345678',
-  isMarried: 'no',
-  profile: 'example.com',
-  password: 'ab',
-  favoriteFoods: ['chicken', 'egg roll', 'french fries'],
-  rating: 4.5,
-  ratings: [3, 5, undefined, true, 5.67],
-  score: 234.5,
-  accountBalance: 100.345,
-  hash: 'a6g8d7Fkf9Du',
-  hash2: 'PDH78DI908g56',
-  serverIp: '8.45.23.0',
-  dob: '1996-01-10T23:50:00.0000+05:30',
-  time: '23:50',
-  address: {
-    pin: '829119',
-    city: 'Rock Port',
-  },
-  limit: '-20',
-}
-```
-
-### **Step 3**: Validating data
-
-Then, the final step is to validate the data using the rules created in step 1:
+Then, we can validate our data using the rules created in step 1:
 
 ```js
 const Validator = require('super-easy-validator');
@@ -207,7 +207,7 @@ let { errors } = Validator.validate(rules, data, {quotes: 'backtick'});
 Suppose we need to validate some fields which are all present in `req.query` (request query) in [express](https://www.npmjs.com/package/express) GET API. As you already know every fields in `req.query` is string by default. Also in most cases these fields are optional, so we have to make sure to consider these things before writing validation. Here is a proper example.
 
 ```js
-const {validate} = require('super-easy-validator');
+const { validate } = require('super-easy-validator');
 
 function validateGetProducts(req, res, next) {
   try {
@@ -240,7 +240,9 @@ function validateGetProducts(req, res, next) {
 }
 ```
 
-Here we have assumed every fields in request query to be optional and also we have added string check before checking any other thing (some fields like `productId`, `expiryMin`, `createdAtMax`, etc will automatic check for strings, so need to write `string` rule explicitly in those)
+Here we have assumed every fields in request query to be optional and also we have added string check for each field.
+
+You may have noticed that some fields like `productId`, `expiryMin`, `createdAtMax`, etc. don't have any `string` rule. This is because some rules like `mongoid`, `date`, `enums:` automatically checks for string
 
 # Guide
 
@@ -548,6 +550,40 @@ console.log(errors)
   '"name" must be a valid name',
   '"age" must be a valid natural number'
 ]
+```
+
+## 10. Strict Check
+
+Sometimes you don't want to have any extra fields in the given data except those which are already defined in validation rules. To do this strict check, you can pass a `strict` option to `true` at the time of validation.
+
+e.g. Suppose you want a user object should have 3 fields: `name`, `age` and `gender`. But at the same time you also don't want to have any extra fields in this user object. Here is how you add those checks:
+
+```js
+const { validate } = require('super-easy-validator')
+
+const rules = {
+  name: 'name',
+  age: 'natural|min:18',
+  gender: 'enums:male,female'
+}
+
+const user = {
+  name: 'john doe',
+  age: 30,
+  gender: 'male',
+  hobby: 'web development'
+}
+
+const { errors } = validate(rules, user, { strict: true })
+if(errors) {
+  console.log(errors)
+}
+```
+
+### Final Output
+
+```js
+[ 'hobby is not required' ]
 ```
 
 # API
