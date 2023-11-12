@@ -24,11 +24,18 @@ let rules = {
   serverIp: 'ip',
   dob: 'date',
   time: 'time',
-  address: 'object',
-  'address.pin': 'string|natural|size:6',
-  'address.city': 'name',
-  'address.country': 'object',
-  'address.country.code': 'string|upper|size:2',
+  address: {
+    pin: 'string|natural|size:6',
+    city: 'name',
+    country: {
+      code: 'string|upper|size:2'
+    }
+  },
+  // address: 'object',
+  // 'address.pin': 'string|natural|size:6',
+  // 'address.city': 'name',
+  // 'address.country': 'object',
+  // 'address.country.code': 'string|upper|size:2',
   person: 'object',
   'person.address': 'object',
   limit: 'optional|string|natural|min:100',

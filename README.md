@@ -1,6 +1,6 @@
 # Introduction
 
-**`super-easy-validator`** a super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than [express-validator](https://www.npmjs.com/package/express-validator) and [zod](https://www.npmjs.com/package/zod).
+**`super-easy-validator`** a zero dependency super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than [express-validator](https://www.npmjs.com/package/express-validator) and [zod](https://www.npmjs.com/package/zod).
 
 Please write any issues on github if you found any. Don't hesitate to suggest any new features if you have any idea.
 
