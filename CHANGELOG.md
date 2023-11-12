@@ -81,3 +81,9 @@
 - New Feature: `strict` option in `ValidatorConfig`
 - Minor changes in `README.md`
 - Bug Fix: Missing types checks of array based validation
+
+# Version 0.8.0
+
+- New Feature: _object_ based validation rules for nested objects
+- New Feature: _object in tuple_ based validation rules for array objects
+- Bug Fix: `name` validation now works fine

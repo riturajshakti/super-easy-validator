@@ -1,8 +1,8 @@
 # Introduction
 
-**`super-easy-validator`** a zero dependency super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than [express-validator](https://www.npmjs.com/package/express-validator) and [zod](https://www.npmjs.com/package/zod).
+**`super-easy-validator`** a super simple npm package with zero dependency which helps in data validation in much simpler way. Its inspired by laravel validator, but even better. Its even more powerful than [express-validator](https://www.npmjs.com/package/express-validator) and [zod](https://www.npmjs.com/package/zod).
 
-Please write any issues on github if you found any. Don't hesitate to suggest any new features if you have any idea.
+Please write any issues on github if you found any. Don't hesitate to suggest any new features.
 
 # Useful Links
 
@@ -21,9 +21,11 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
   - [5. Optional and Nullable Values](#5-optional-and-nullable-values)
   - [6. Argument based Validations](#6-argument-based-validations)
   - [7. Regular Expression Limitations](#7-regular-expression-limitations)
-  - [8. Array Elements Validation](#8-array-elements-validation)
-  - [9. Error Options](#9-error-options)
-  - [10. Strict Check](#10-strict-check)
+  - [8. Nested Object Validation](#8-nested-object-validation)
+  - [9. Simple Array Validation](#9-simple-array-validation)
+  - [10. Array Based Validation](#10-array-objects-validation)
+  - [11. Error Options](#11-error-options)
+  - [12. Strict Check](#12-strict-check)
 - [API](#api)
   - [Optional and Nullable Types](#optional-and-nullable-types)
     - [`optional`](#1-optional)
@@ -80,6 +82,8 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
 
 # How to install
 
+Run this command in the root of your npm project
+
 ```sh
 npm i super-easy-validator
 ```
@@ -113,52 +117,76 @@ const data = {
   address: {
     pin: '829119',
     city: 'Rock Port',
+    country: {
+      code: 'IN',
+    }
   },
-  limit: '-20',
+  users: [
+    {
+      name: 'John Doe',
+      age: 20,
+      gender: 'male',
+    },
+    { }
+  ],
+  limit: '90',
 }
 ```
 
-Here is the step by step guide to validate the above data:
+Here is the step by step guide to validate the above data using this package:
 
 ### **Step 1**: Creating validations rules
 
-At first we need to create the validation rules which is just an `Record` of key value pairs. This validation rules object will later be used for validating data.
+At first we need to create the validation rules which is just a `Record` of key value pairs. This validation rules object will later be used for validating data.
 
 ```js
 let rules = {
-  mail: 'optional|email',
-  phone: 'optional|phone',
-  $atleast: 'mail|phone',
-  $atmost: 'mail|phone|size:1',
-  name: 'name|field:person name',
-  gender: 'enums:male,female',
-  adult: 'enums:true,false',
-  id: 'uuid',
-  creditCard: 'string|regex:/^[0-9]{16}$/',
-  isMarried: 'boolean',
-  userId: 'mongoid',
-  profile: 'url',
-  password: 'string|min:3|max:15',
-  favoriteFoods: 'array|min:3|max:6',
-  rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
-  ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
-  score: 'number|whole',
-  accountBalance: 'number|min:0|decimalsize:2',
-  hash: 'lower',
-  hash2: 'upper',
-  serverIp: 'ip',
-  dob: 'date',
-  time: 'time',
-  address: 'object',
-  'address.pin': 'string|natural|size:6',
-  'address.city': 'name',
-  limit: 'optional|string|natural',
+	mail: 'optional|email',
+	phone: 'optional|phone',
+	$atleast: 'mail|phone',
+	$atmost: 'mail|phone|size:1',
+	name: 'name|field:person name',
+	gender: 'enums:male,female',
+	adult: 'enums:true,false',
+	id: 'uuid',
+	creditCard: 'string|regex:/^[0-9]{16}$/',
+	isMarried: 'boolean',
+	userId: 'mongoid',
+	profile: 'url',
+	password: 'string|min:3|max:15',
+	favoriteFoods: 'array|min:3|max:6',
+	rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
+	ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
+	score: 'number|whole',
+	accountBalance: 'number|min:0|decimalsize:2',
+	hash: 'lower',
+	hash2: 'upper',
+	serverIp: 'ip',
+	dob: 'date',
+	time: 'time',
+	address: {
+		pin: 'string|natural|size:6',
+		city: 'name',
+		country: {
+			code: 'alpha|upper|size:2',
+		},
+	},
+	users: [
+		{
+			name: 'name',
+			age: 'natural',
+			gender: 'enums:male,female',
+		},
+	],
+	person: 'object',
+	'person.address': 'string',
+	limit: 'optional|string|natural|min:100',
 }
 ```
 
 ### **Step 2**: Validating data
 
-Then, we can validate our data using the rules created in step 1:
+Then, we can validate our data using the rules created in previous step:
 
 ```js
 const Validator = require('super-easy-validator');
@@ -175,22 +203,26 @@ This is how the final output should look like:
 
 ```js
 [
-  'at least one of mail and phone is required', 
-  'person name must be a valid name',
-  'gender is invalid',
-  'isMarried must be a valid boolean',
-  'userId is required',
-  'profile must be a valid url',
-  'password must have length of at least 3',      
+  'at least one of `mail` and `phone` is required',
+  '`person name` must be a valid name',
+  '`gender` is invalid',
+  '`isMarried` must be a valid boolean',
+  '`userId` is required',
+  '`profile` must be a valid url',
+  '`password` must have length of at least 3',
   'rating is not correct, please fix it',
-  'ratingsList[3] must be a valid number',        
-  'ratingsList[4] must be a valid natural number',
-  'score must be a valid whole number',
-  'accountBalance must have 2 decimal places',    
-  'hash must not contains upper case letters',    
-  'hash2 must not contains lower case letters',   
-  'address.city must be a valid name',
-  'limit must be a valid natural numeric string'  
+  '`ratingsList[3]` must be a valid number',
+  '`ratingsList[4]` must be a valid natural number',
+  '`score` must be a valid whole number',
+  '`accountBalance` must have 2 decimal places',
+  '`hash` must not contains upper case letters',
+  '`hash2` must not contains lower case letters',
+  '`users[1].name` is required',
+  '`users[1].age` is required',
+  '`users[1].gender` is required',
+  '`person` is required',
+  '`person.address` is required',
+  '`limit` must be at least 100',
 ]
 ```
 
@@ -204,7 +236,7 @@ let { errors } = Validator.validate(rules, data, {quotes: 'backtick'});
 
 ## 2. Data Validation of request query in express
 
-Suppose we need to validate some fields which are all present in `req.query` (request query) in [express](https://www.npmjs.com/package/express) GET API. As you already know every fields in `req.query` is string by default. Also in most cases these fields are optional, so we have to make sure to consider these things before writing validation. Here is a proper example.
+Suppose we need to validate some fields which are all present in `req.query` (request query) in [express](https://www.npmjs.com/package/express) GET API. As you already know every fields in `req.query` is string. Also in most cases these fields are optional, so we have to make sure to consider these things before writing validation. Here is a proper example.
 
 ```js
 const { validate } = require('super-easy-validator');
@@ -242,7 +274,7 @@ function validateGetProducts(req, res, next) {
 
 Here we have assumed every fields in request query to be optional and also we have added string check for each field.
 
-You may have noticed that some fields like `productId`, `expiryMin`, `createdAtMax`, etc. don't have any `string` rule. This is because some rules like `mongoid`, `date`, `enums:` automatically checks for string
+You may have noticed that some fields like `productId`, `expiryMin`, `createdAtMax`, etc. don't have any `string` rule. This is because some rules like `mongoid`, `date`, `enums:` automatically checks for string. So you don't need to write `string` check explicitly there.
 
 # Guide
 
@@ -451,7 +483,63 @@ let rules = {
 };
 ```
 
-## 8. Array Elements Validation
+## 8. Nested Object Validation
+
+You can also pass object based rule to validate nested object. e.g.
+
+```js
+const { validate } = require('super-easy-validator');
+
+const rules = {
+  address: {
+    line1: 'string|min:10',
+    line2: 'optional|string|min:10',
+    city: 'name',
+    state: 'name',
+    pin: 'string|natural|size:6',
+    country: {
+      code: 'alpha|upper|size:2',
+      phoneCode: 'regex:/^\\+[0-9]{1,3}$/'
+    },
+  }
+}
+
+const data = {
+  address: {
+    line1: 800,
+    line2: false,
+    city: 'N/A',
+    state: 'N/A',
+    pin: 'ABC123',
+    country: {
+      phoneCode: '+9999'
+    }
+  }
+}
+
+let { errors } = validate(rules, data);
+if (errors) {
+  console.log(errors);
+}
+```
+
+### Output
+
+```js
+[
+  'address.line1 must be string',
+  'address.line2 must be string',
+  'address.city must be a valid name',
+  'address.state must be a valid name',
+  'address.pin must be a valid numeric string',    
+  'address.country.code is required',
+  'address.country.phoneCode is invalid'
+]
+```
+
+There is no limit on the level of nesting.
+
+## 9. Simple Array Validation
 
 Sometimes it is required to validate each elements in an array. For this purpose we have `arrayof:` validation. It is an argument based validation where the argument itself is a validation rule. e.g.
 
@@ -487,7 +575,89 @@ let rules = {
 
 > **NOTE:** `array` validation is automatically applied when you use `arrayof:` validation rule.
 
-## 9. Error Options
+## 10. Array Objects Validation
+
+You can also validate objects inside an array if you know the objects structure. Here is an example of objects validation which are present inside an array field.
+
+e.g. In this example, we will going to validate each product present in the `products` field:
+
+```js
+const { validate } = require('./index')
+
+const rules = {
+	products: [
+		{
+			title: 'string|min:5',
+			description: 'string|min:20',
+			price: 'positive',
+			category: 'enums:Electronics,Kitchen,Fashion,Others',
+		},
+	],
+}
+
+const data = {
+	products: [
+		{
+			title: 'Smartphone',
+			description: 'High-performance smartphone with a stunning display and advanced features.',
+			price: 599.99,
+		},
+		{
+			title: 'Coffee Maker',
+			price: 'InvalidPrice',
+			category: 'Kitchen',
+		},
+		{
+			title: 'Designer Dress',
+			description: 'Elegant and stylish designer dress for special occasions.',
+			price: 149.99,
+			category: 'InvalidCategory',
+		},
+		{
+			title: 123,
+			description: 'Premium-quality notebook for all your creative and professional needs.',
+			price: '29.99',
+			category: 'Others',
+		},
+		{
+			title: 'Invalid',
+			description: 'Short desc',
+			price: -10,
+			category: 'Fashion',
+		},
+		{
+			title: 'Laptop',
+			description: 'Powerful laptop with cutting-edge technology.',
+			price: 999.99,
+			category: 'Electronics',
+		},
+	],
+}
+
+let { errors } = validate(rules, data)
+if (errors) {
+	console.log(errors)
+}
+```
+
+### Output
+
+```js
+[
+  'products[0].category is required',
+  'products[1].description is required',
+  'products[1].price must be a valid number',
+  'products[2].category is invalid',
+  'products[3].title must be string',
+  'products[3].price must be a valid number',
+  'products[4].description must have length of at least 20',
+  'products[4].price must be a valid positive number'
+]
+```
+
+There is no limit on the level of nesting. You can also use the combination of nested object and nested array objects validation rules.
+
+## 11. Error Options
 
 In case of errors, you can change field names to be shown in error messages and you can even set your own custom error message for each fields. You can also set(or hide) the quotes type in error message
 
@@ -552,7 +722,7 @@ console.log(errors)
 ]
 ```
 
-## 10. Strict Check
+## 12. Strict Check
 
 Sometimes you don't want to have any extra fields in the given data except those which are already defined in validation rules. To do this strict check, you can pass a `strict` option to `true` at the time of validation.
 
@@ -585,6 +755,8 @@ if(errors) {
 ```js
 [ 'hobby is not required' ]
 ```
+
+> **NOTE:** When strict check is enabled, it strict checks for nested objects and nested array objects as well.
 
 # API
 
