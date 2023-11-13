@@ -87,3 +87,8 @@
 - New Feature: _object_ based validation rules for nested objects
 - New Feature: _object in tuple_ based validation rules for array objects
 - Bug Fix: `name` validation now works fine
+
+# Version 0.8.1
+
+- Bug Fix: typescript type checks now works fine for nested array objects
+- Modified: updated `README.md`

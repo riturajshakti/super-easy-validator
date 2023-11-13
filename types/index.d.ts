@@ -5,7 +5,7 @@ declare module 'super-easy-validator' {
 	}
 
 	export interface ValidatorRules {
-		[key: string]: string | string[] | ValidatorRules;
+		[key: string]: string | string[] | ValidatorRules | ValidatorRules[];
 	}
 
 	export interface ValidatorData {

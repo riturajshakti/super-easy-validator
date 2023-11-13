@@ -141,46 +141,46 @@ At first we need to create the validation rules which is just a `Record` of key 
 
 ```js
 let rules = {
-	mail: 'optional|email',
-	phone: 'optional|phone',
-	$atleast: 'mail|phone',
-	$atmost: 'mail|phone|size:1',
-	name: 'name|field:person name',
-	gender: 'enums:male,female',
-	adult: 'enums:true,false',
-	id: 'uuid',
-	creditCard: 'string|regex:/^[0-9]{16}$/',
-	isMarried: 'boolean',
-	userId: 'mongoid',
-	profile: 'url',
-	password: 'string|min:3|max:15',
-	favoriteFoods: 'array|min:3|max:6',
-	rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
-	ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
-	score: 'number|whole',
-	accountBalance: 'number|min:0|decimalsize:2',
-	hash: 'lower',
-	hash2: 'upper',
-	serverIp: 'ip',
-	dob: 'date',
-	time: 'time',
-	address: {
-		pin: 'string|natural|size:6',
-		city: 'name',
-		country: {
-			code: 'alpha|upper|size:2',
-		},
-	},
-	users: [
-		{
-			name: 'name',
-			age: 'natural',
-			gender: 'enums:male,female',
-		},
-	],
-	person: 'object',
-	'person.address': 'string',
-	limit: 'optional|string|natural|min:100',
+  mail: 'optional|email',
+  phone: 'optional|phone',
+  $atleast: 'mail|phone',
+  $atmost: 'mail|phone|size:1',
+  name: 'name|field:person name',
+  gender: 'enums:male,female',
+  adult: 'enums:true,false',
+  id: 'uuid',
+  creditCard: 'string|regex:/^[0-9]{16}$/',
+  isMarried: 'boolean',
+  userId: 'mongoid',
+  profile: 'url',
+  password: 'string|min:3|max:15',
+  favoriteFoods: 'array|min:3|max:6',
+  rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
+  ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
+  score: 'number|whole',
+  accountBalance: 'number|min:0|decimalsize:2',
+  hash: 'lower',
+  hash2: 'upper',
+  serverIp: 'ip',
+  dob: 'date',
+  time: 'time',
+  address: {
+    pin: 'string|natural|size:6',
+    city: 'name',
+    country: {
+      code: 'alpha|upper|size:2',
+    },
+  },
+  users: [
+    {
+      name: 'name',
+      age: 'natural',
+      gender: 'enums:male,female',
+    },
+  ],
+  person: 'object',
+  'person.address': 'string',
+  limit: 'optional|string|natural|min:100',
 }
 ```
 
@@ -585,58 +585,58 @@ e.g. In this example, we will going to validate each product present in the `pro
 const { validate } = require('./index')
 
 const rules = {
-	products: [
-		{
-			title: 'string|min:5',
-			description: 'string|min:20',
-			price: 'positive',
-			category: 'enums:Electronics,Kitchen,Fashion,Others',
-		},
-	],
+  products: [
+    {
+      title: 'string|min:5',
+      description: 'string|min:20',
+      price: 'positive',
+      category: 'enums:Electronics,Kitchen,Fashion,Others',
+    },
+  ],
 }
 
 const data = {
-	products: [
-		{
-			title: 'Smartphone',
-			description: 'High-performance smartphone with a stunning display and advanced features.',
-			price: 599.99,
-		},
-		{
-			title: 'Coffee Maker',
-			price: 'InvalidPrice',
-			category: 'Kitchen',
-		},
-		{
-			title: 'Designer Dress',
-			description: 'Elegant and stylish designer dress for special occasions.',
-			price: 149.99,
-			category: 'InvalidCategory',
-		},
-		{
-			title: 123,
-			description: 'Premium-quality notebook for all your creative and professional needs.',
-			price: '29.99',
-			category: 'Others',
-		},
-		{
-			title: 'Invalid',
-			description: 'Short desc',
-			price: -10,
-			category: 'Fashion',
-		},
-		{
-			title: 'Laptop',
-			description: 'Powerful laptop with cutting-edge technology.',
-			price: 999.99,
-			category: 'Electronics',
-		},
-	],
+  products: [
+    {
+      title: 'Smartphone',
+      description: 'High-performance smartphone with a stunning display and advanced features.',
+      price: 599.99,
+    },
+    {
+      title: 'Coffee Maker',
+      price: 'InvalidPrice',
+      category: 'Kitchen',
+    },
+    {
+      title: 'Designer Dress',
+      description: 'Elegant and stylish designer dress for special occasions.',
+      price: 149.99,
+      category: 'InvalidCategory',
+    },
+    {
+      title: 123,
+      description: 'Premium-quality notebook for all your creative and professional needs.',
+      price: '29.99',
+      category: 'Others',
+    },
+    {
+      title: 'Invalid',
+      description: 'Short desc',
+      price: -10,
+      category: 'Fashion',
+    },
+    {
+      title: 'Laptop',
+      description: 'Powerful laptop with cutting-edge technology.',
+      price: 999.99,
+      category: 'Electronics',
+    },
+  ],
 }
 
 let { errors } = validate(rules, data)
 if (errors) {
-	console.log(errors)
+  console.log(errors)
 }
 ```
 
