@@ -92,3 +92,8 @@
 
 - Bug Fix: typescript type checks now works fine for nested array objects
 - Modified: updated `README.md`
+
+# Version 0.8.2
+
+- New Feature: Added new feature for `phonecode` validation
+- Modified: updated `README.md`

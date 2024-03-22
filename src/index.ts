@@ -151,9 +151,9 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 			}
 		}
 
-		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip
+		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {
@@ -440,6 +440,11 @@ function checkSpecificStringType(
 
 	if (specificType === 'phone' && !/^(?:\+\d{1,3}\s?)?(?:\(\d+\))?(?:\d+\s?)+(?:\d{1,4})$/.test(value)) {
 		errors.push(error ?? `"${label}" must be a valid phone`)
+		return
+	}
+
+	if (specificType === 'phonecode' && !/^\+\d{1,3}$/.test(value)) {
+		errors.push(error ?? `"${label}" must be a valid phone code`)
 		return
 	}
 
@@ -954,9 +959,9 @@ function checkSpecificArrayType(
 			)
 		}
 
-		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip
+		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,uuid,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {

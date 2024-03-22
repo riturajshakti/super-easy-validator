@@ -50,14 +50,15 @@ Please write any issues on github if you found any. Don't hesitate to suggest an
     - [`alpha`](#7-alpha)
     - [`alphanumeric`](#8-alphanumeric)
     - [`phone`](#9-phone)
-    - [`mongoid`](#10-mongoid)
-    - [`date`](#11-date)
-    - [`dateonly`](#12-dateonly)
-    - [`time`](#13-time)
-    - [`lower`](#14-lower)
-    - [`upper`](#15-upper)
-    - [`ip`](#16-ip)
-    - [`uuid`](#17-uuid)
+    - [`phonecode`](#10-phonecode)
+    - [`mongoid`](#11-mongoid)
+    - [`date`](#12-date)
+    - [`dateonly`](#13-dateonly)
+    - [`time`](#14-time)
+    - [`lower`](#15-lower)
+    - [`upper`](#16-upper)
+    - [`ip`](#17-ip)
+    - [`uuid`](#18-uuid)
   - [Specific Number Types](#specific-number-types)
     - [`int`](#1-int)
     - [`positive`](#2-positive)
@@ -327,6 +328,7 @@ In these cases, it will automatic check for `string` data type, and you don't ne
 - `name`
 - `fullname`
 - `phone`
+- `phonecode`
 - `email`
 - `url`
 - `domain`
@@ -1072,7 +1074,17 @@ let rules = {
 };
 ```
 
-### 10. **`mongoid`**
+### 10. **`phonecode`**
+
+`phonecode` validation is used to check if a string contains valid phone country code. This includes the following examples (`+1`, `+91`, `+963`, etc). Here is code example for validation:
+
+```js
+let rules = {
+  phoneCode: 'phonecode',
+};
+```
+
+### 11. **`mongoid`**
 
 `mongoid` validation is used to check if a string is valid mongodb ID. e.g.
 
@@ -1082,7 +1094,7 @@ let rules = {
 };
 ```
 
-### 11. **`date`**
+### 12. **`date`**
 
 `date` validation is used to check if a string is valid ISO date. This may also include the time as well. e.g.
 
@@ -1105,7 +1117,7 @@ This will validate the following strings:
 '1996-01-10T23:50:34.6789-03:00';
 ```
 
-### 12. **`dateonly`**
+### 13. **`dateonly`**
 
 `dateonly` validation is used to check if a string is valid ISO date. This must include date only without time. e.g.
 
@@ -1123,7 +1135,7 @@ This will validate the following strings:
 '9999-04-01';
 ```
 
-### 13. **`time`**
+### 14. **`time`**
 
 `time` validation is used to check if a string is valid ISO time. This must include time only. e.g.
 
@@ -1141,7 +1153,7 @@ This will validate the following time strings:
 '23:55:00.3400';
 ```
 
-### 14. **`lower`**
+### 15. **`lower`**
 
 `lower` validation is used to check if a string is all lowercase. This could include any character except uppercase letters. e.g.
 
@@ -1151,7 +1163,7 @@ let rules = {
 };
 ```
 
-### 15. **`upper`**
+### 16. **`upper`**
 
 `upper` validation is used to check if a string is all uppercase. This could include any character except lowercase letters. e.g.
 
@@ -1161,7 +1173,7 @@ let rules = {
 };
 ```
 
-### 16. **`ip`**
+### 17. **`ip`**
 
 `ip` validation is used to check if a string is a valid IP address. e.g.
 
@@ -1171,7 +1183,7 @@ let rules = {
 };
 ```
 
-### 17. **`uuid`**
+### 18. **`uuid`**
 
 `uuid` validation is used to check if a string is valid UUID (used in SQL Table IDs). e.g.
 
@@ -1580,6 +1592,7 @@ let rules = {
 * `arrayof:alpha`
 * `arrayof:alphanumeric`
 * `arrayof:phone`
+* `arrayof:phonecode`
 * `arrayof:mongoid`
 * `arrayof:date`
 * `arrayof:dateonly`

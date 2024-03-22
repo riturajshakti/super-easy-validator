@@ -5,6 +5,7 @@ let rules = {
 	phone: 'optional|phone',
 	$atleast: 'mail|phone',
 	$atmost: 'mail|phone|size:1',
+	phoneCode: 'optional|phonecode',
 	name: 'name|field:person name',
 	gender: 'enums:male,female',
 	adult: 'enums:true,false',
@@ -44,6 +45,7 @@ let rules = {
 }
 
 let data = {
+	phoneCode: '+99',
 	name: 'test123',
 	gender: 'Male',
 	adult: true,
