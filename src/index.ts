@@ -7,7 +7,15 @@ import {
 	InvalidRuleError,
 	isOperatorNode,
 } from './rules'
-import { getError, getField, getPropByString, getSize } from './helpers'
+import {
+	getError,
+	getField,
+	getPropByString,
+	getSize,
+	hasIndexSyntax,
+	isSliceKey,
+	resolveIndexedPath,
+} from './helpers'
 import {
 	ArrayType,
 	ConstraintType,
@@ -97,7 +105,12 @@ function validateInternal(
 				}
 				validations = value as string[] as Validation[]
 			} else if (typeof value === 'object' && !Array.isArray(value) && isOperatorNode(value as object)) {
-				const _internalData = !key.includes('.') ? (data as Data)[key] : getPropByString(data as Data, key)
+				const _internalData =
+					config.arrayIndexingCheck !== false && hasIndexSyntax(key)
+						? resolveIndexedPath(data as Data, key).value
+						: !key.includes('.')
+						? (data as Data)[key]
+						: getPropByString(data as Data, key)
 				const operatorErrors = validateOperatorNode(
 					value as Record<string, unknown>,
 					_internalData,
@@ -168,7 +181,27 @@ function validateInternal(
 			}
 
 			data = data as Data;
-			let dataToSend = !key.includes('.') ? data[key] : getPropByString(data, key)
+			const indexingEnabled = config.arrayIndexingCheck !== false
+			const indexed = indexingEnabled && hasIndexSyntax(key)
+
+			if (indexed && isSliceKey(key)) {
+				const { value: slice, labels } = resolveIndexedPath(data, key)
+				if (!Array.isArray(slice)) {
+					errors.push({ message: `"${key}" must be an array`, code: ErrorCodes.NOT_ARRAY })
+				} else {
+					for (let s = 0; s < slice.length; s++) {
+						validateSingleData(labels[s] ?? `${key}[${s}]`, slice[s], validations, errors, variableName)
+					}
+				}
+				allErrors.push(...errors)
+				continue
+			}
+
+			let dataToSend = indexed
+				? resolveIndexedPath(data, key).value
+				: !key.includes('.')
+				? data[key]
+				: getPropByString(data, key)
 
 			if (key === '$atleast') {
 				validateAtleastData(data, value as string, errors, variableName)
@@ -306,7 +339,8 @@ function validateBranch(
 	const shortKey = fieldName.includes('.') ? fieldName.slice(fieldName.lastIndexOf('.') + 1) : fieldName
 	const parentName = fieldName.includes('.') ? fieldName.slice(0, fieldName.lastIndexOf('.')) : undefined
 	const wrapper: Rules = { [shortKey]: branch as Rules[string] }
-	return validateInternal(wrapper, { [shortKey]: value } as Data, config, [], parentName)
+	const branchConfig = hasIndexSyntax(shortKey) ? { ...config, arrayIndexingCheck: false } : config
+	return validateInternal(wrapper, { [shortKey]: value } as Data, branchConfig, [], parentName)
 }
 
 function branchTypeMatches(branch: unknown, value: any): boolean {
@@ -1275,7 +1309,12 @@ function validateStrictCheck(rules: Rules, data: Data, errors: ValidationDetail[
 	let ruleKeys = Object.keys(rules)
 	let dataKeys = Object.keys(data)
 	let dataTopLevelKeys = dataKeys.filter((e) => !e.includes('.'))
-	let keys = ruleKeys.filter((e) => !e.includes('.') && !['$atleast', '$atmost'].includes(e))
+	let keys = ruleKeys
+		.filter((e) => !e.includes('.') && !['$atleast', '$atmost'].includes(e))
+		.map((e) => {
+			const bracket = e.indexOf('[')
+			return bracket > 0 ? e.slice(0, bracket) : e
+		})
 	for (let e of dataTopLevelKeys) {
 		if (!keys.includes(e)) {
 			const label = variableName ? `${variableName}.${e}` : e

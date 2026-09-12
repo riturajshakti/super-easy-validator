@@ -1,6 +1,6 @@
 # super-easy-validator
 
-**Validate data with rules you write as plain strings.** Zero dependencies, ~18 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
+**Validate data with rules you write as plain strings.** Zero dependencies, ~19 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
 
 ```sh
 npm i super-easy-validator
@@ -20,7 +20,7 @@ npm i super-easy-validator
 z.number().int().positive().min(18).optional()
 ```
 
-- **Zero runtime dependencies** — ~18 kB to download, ~84 kB on disk
+- **Zero runtime dependencies** — ~19 kB to download, ~90 kB on disk
 - **Type-safe rule strings** — `'mim:5'` is a compile error in TypeScript
 - Works with plain JavaScript too
 - Nested objects, arrays of objects, per-element array rules, custom messages
@@ -29,7 +29,7 @@ z.number().int().positive().min(18).optional()
 
 | Package | Download | On disk | Dependencies |
 |---|---|---|---|
-| **super-easy-validator** | **18 kB** | **84 kB** | **0** |
+| **super-easy-validator** | **19 kB** | **90 kB** | **0** |
 | express-validator | 34 kB | 6.8 MB | 2 |
 | yup | 65 kB | 780 kB | 4 |
 | valibot | 189 kB | 1.8 MB | 0 |
@@ -286,6 +286,31 @@ They also separate failures that share a message. `enums:` and `regex:` both rep
 
 ---
 
+## Array indexing
+
+Rule keys can target individual array elements, count from the end, or select a range:
+
+```js
+const rules = {
+  coords: 'array|size:2',
+  'coords[0]': 'number|min:-90|max:90',   // latitude
+  'coords[1]': 'number|min:-180|max:180', // longitude
+  'history[-1]': 'date',                  // the most recent entry
+  'rgb[0:3]': 'whole|max:255',            // each of the first three
+}
+```
+
+A bracket selects elements, so the rule applies to each selected element — `c` alone is the array, `c[0]` is one element. Slices follow `Array.prototype.slice`, and errors report the real index:
+
+```js
+validate({ 'c[0:2]': 'number' }, { c: ['a', 'b', 3] })
+// → ['c[0] must be a valid number', 'c[1] must be a valid number']
+```
+
+→ [Array indexing in full](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#array-indexing)
+
+---
+
 ## Options
 
 ```js
@@ -294,6 +319,7 @@ validate(rules, data, { quotes: 'backtick', strict: true })
 
 - **`quotes`** — `'none'` (default), `'single-quotes'`, `'double-quotes'`, `'backtick'`
 - **`strict`** — reject any field in the data that has no rule, nested objects included
+- **`arrayIndexingCheck`** — `true` by default. Set `false` to treat keys like `'c[0]'` as literal names instead of array indexes
 
 ---
 

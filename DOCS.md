@@ -1970,3 +1970,109 @@ Combine with `$and`, exactly as for objects:
 ```js
 { matrix: { $and: ['optional', 'arrayof:arrayof:number'] } }
 ```
+
+---
+
+# Array indexing
+
+Rule keys can select individual array elements, count from the end, or select
+a range. Indexing is on by default and can be turned off with the
+`arrayIndexingCheck` option.
+
+```js
+const rules = {
+  coords: 'array|size:2',
+  'coords[0]': 'number|min:-90|max:90',
+  'coords[1]': 'number|min:-180|max:180',
+}
+
+validate(rules, { coords: [200, -0.12] })
+// → ['coords[0] must be at most 90']
+```
+
+## The three forms
+
+| Form | Meaning |
+|---|---|
+| `c[0]` | the element at index 0 |
+| `c[-1]` | the last element; `c[-2]` the second to last |
+| `c[0:2]` | elements 0 and 1 — the rule applies to **each** selected element |
+
+A bracket selects elements, so the rule you write is an *element* rule. Use a
+plain key when you want to validate the array itself:
+
+```js
+{ c: 'array|min:3|arrayof:natural' }   // the array: length, and every element
+{ 'c[0]': 'natural' }                  // just the first element
+{ 'c[0:2]': 'natural' }                // each of the first two elements
+```
+
+## Slices
+
+Slice bounds follow `Array.prototype.slice`: the start is inclusive, the end
+exclusive, either may be omitted, and both may be negative. Out-of-range
+bounds clamp rather than error.
+
+```js
+{ 'c[1:]': 'number' }     // from index 1 to the end
+{ 'c[:2]': 'number' }     // the first two
+{ 'c[-2:]': 'number' }    // the last two
+{ 'c[5:9]': 'number' }    // selects nothing on a short array, so it passes
+```
+
+Errors are reported per element, with the real index:
+
+```js
+validate({ 'c[0:2]': 'number' }, { c: ['a', 'b', 3] })
+// → ['c[0] must be a valid number', 'c[1] must be a valid number']
+```
+
+## Combining with paths
+
+Indexing composes with dotted paths, in either direction, and with nested
+arrays:
+
+```js
+{ 'a.c[0]': 'number' }          // index inside a nested object
+{ 'u[0].name': 'string' }       // a property of an indexed element
+{ 'u[0:2].name': 'string' }     // that property on each selected element
+{ 'order.items[0].sku': 'string|min:3' }
+{ 'c[0][1]': 'number' }         // nested arrays
+```
+
+## Missing elements
+
+An index that does not exist reads as a missing field, so it reports
+`is required` and can be made optional:
+
+```js
+validate({ 'c[9]': 'number' }, { c: [1] })
+// → ['c[9] is required']
+
+validate({ 'c[9]': 'optional|number' }, { c: [1] })
+// → no errors
+```
+
+The same applies when the field is absent or is not an array.
+
+## Turning indexing off
+
+Set `arrayIndexingCheck: false` to treat bracketed keys literally. Use this if
+your data genuinely contains keys such as `"c[0]"`:
+
+```js
+validate({ 'c[0]': 'string' }, { 'c[0]': 'x' }, { arrayIndexingCheck: false })
+// → no errors: the key is matched literally
+```
+
+This affects only bracket syntax. Dotted paths and ordinary keys behave the
+same either way.
+
+## Strict mode
+
+An indexed rule declares its base key, so `'c[0]'` counts `c` as declared:
+
+```js
+validate({ 'c[0]': 'number' }, { c: [1] }, { strict: true })          // → no errors
+validate({ 'c[0]': 'number' }, { c: [1], z: 2 }, { strict: true })    // → ['z is not required']
+```

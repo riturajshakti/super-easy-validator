@@ -4,6 +4,12 @@ Full history: https://github.com/riturajshakti/super-easy-validator/releases
 
 ## 0.9.0
 
+- New: array indexing in rule keys — `'c[0]'`, `'c[-1]'` and `'c[0:2]'` select
+  elements, count from the end, and select ranges. A bracket selects elements,
+  so the rule applies to each selected element. Composes with dotted paths
+  (`'u[0].name'`, `'a.c[0:2]'`) and nested arrays (`'c[0][1]'`)
+- New: `arrayIndexingCheck` option, `true` by default. Set it to `false` to
+  treat bracketed keys as literal names
 - New: `$or` and `$and` operators combine several rules for one field. `$or`
   passes if any branch passes; `$and` requires every branch and reports all
   failures. Branches may be rule strings, object rules, array-of-object rules,
