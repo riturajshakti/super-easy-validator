@@ -62,6 +62,10 @@ function validateInternal(
 				if (!allErrors) {
 					allErrors = []
 				}
+				if(_internalData === undefined || _internalData === null) {
+					allErrors.push(`${label} is required`)
+					continue
+				}
 				if(typeof _internalData !== 'object' || Array.isArray(_internalData)) {
 					allErrors.push(`${label} must be of type object`)
 					continue
@@ -80,7 +84,7 @@ function validateInternal(
 				if (!allErrors) {
 					allErrors = []
 				}
-				if(!_internalData) {
+				if(_internalData === undefined || _internalData === null) {
 					allErrors.push(`${label} is required`)
 					continue
 				}
@@ -144,7 +148,7 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 		const previousValidations = validations.slice(0, validations.indexOf(validation))
 
 		// ! string,number,boolean,object,array,bigint
-		if ('string,number,boolean,object,array,bigint'.split(',').includes(validation)) {
+		if ('string,number,boolean,object,array,bigint,symbol'.split(',').includes(validation)) {
 			checkDataType(key, value, validation as DataType, previousValidations, validations, errors, variableName)
 			if (errors.length) {
 				break
@@ -1054,4 +1058,21 @@ function validateStrictCheck(rules: Rules, data: Data, errors: string[], variabl
 
 const Validator = { validate }
 
+export { validate }
+export default Validator
+export type {
+	Rules,
+	Data,
+	ValidatorConfig,
+	ValidatorResult,
+	Validation,
+	DataType,
+	SpecificStringType,
+	SpecificNumberType,
+	ConstraintType,
+	ArrayType,
+} from './types'
+
 module.exports = Validator
+module.exports.validate = validate
+module.exports.default = Validator

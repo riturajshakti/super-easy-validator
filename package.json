@@ -1,17 +1,41 @@
 {
 	"name": "super-easy-validator",
-	"version": "0.8.2",
+	"version": "0.9.0",
 	"description": "A super simple npm package which helps in validation in much simpler way. Its inspired by laravel validator but its even better, also its more powerful than express-validator",
 	"main": "dist/index.js",
-	"types": "types/index.d.ts",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"require": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist/**/*.js",
+		"dist/**/*.d.ts",
+		"README.md",
+		"CHANGELOG.md",
+		"LICENSE"
+	],
+	"sideEffects": false,
+	"engines": {
+		"node": ">=16.6"
+	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/riturajshakti/super-easy-validator.git"
+		"url": "git+https://github.com/riturajshakti/super-easy-validator.git"
+	},
+	"homepage": "https://github.com/riturajshakti/super-easy-validator#readme",
+	"bugs": {
+		"url": "https://github.com/riturajshakti/super-easy-validator/issues"
 	},
 	"scripts": {
-		"build": "npx tsc",
-		"watch": "npx tsc -w",
-		"dev": "nodemon dist/test.js"
+		"build": "tsc",
+		"watch": "tsc -w",
+		"test": "npm run build && node --test test/*.test.js",
+		"prepublishOnly": "npm run build && npm test"
 	},
 	"author": "Rituraj Shakti",
 	"license": "MIT",
@@ -21,48 +45,15 @@
 		"typescript": "^5.2.2"
 	},
 	"keywords": [
-		"field",
-		"form",
-		"input",
-		"schema",
-		"error",
 		"validator",
-		"express-validator",
-		"express validator",
-		"express",
-		"zod",
 		"validation",
-		"validation rule",
-		"validation rules",
-		"validator rule",
-		"validator rules",
-		"custom validator",
-		"custom rules",
-		"validity checks",
-		"rule engine",
-		"data consistency",
-		"error handling",
-		"form field",
-		"form error handling",
-		"form fields",
-		"validation library",
-		"error messages",
-		"data validation rules",
-		"input sanitization",
-		"data",
-		"laravel",
+		"schema",
 		"data validation",
 		"input validation",
 		"form validation",
-		"form validator",
-		"data quality",
-		"data integrity",
-		"data verification",
-		"data accuracy",
-		"data validation plugin",
-		"data validation library",
-		"data validation tool",
-		"data validation utility",
-		"data validation framework"
+		"validation rules",
+		"typescript",
+		"zero dependency",
+		"laravel validator"
 	]
 }

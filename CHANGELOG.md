@@ -97,3 +97,22 @@
 
 - New Feature: Added new feature for `phonecode` validation
 - Modified: updated `README.md`
+
+# Version 0.9.0
+
+- Bug Fix: a bare `symbol` rule was never applied (it is now)
+- Bug Fix: falsy values (`''`, `0`, `false`) in an array-rule field reported
+  "is required" instead of the correct type error
+- Bug Fix: a `null` nested object reported "must be of type object" instead of
+  "is required"
+- New: full test suite — 262 tests using Node's built-in test runner, still
+  zero dependencies
+- New: TypeScript types are now generated from source, so rule strings are
+  checked against the real validation union (`'mim:5'` is a compile error)
+- New: `exports` map, `engines`, `sideEffects`, `homepage` and `bugs` fields
+- New: CI workflow running build and tests on Node 18/20/22
+- Modified: package is roughly half the size — source maps, `src/`, and a
+  stray compiled scratch file are no longer published
+- Modified: `README.md` corrections — the documented `null` keyword does not
+  exist (use `nullable`), plus three list/import fixes
+- Note: no validation behaviour changed apart from the three bug fixes above

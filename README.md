@@ -584,7 +584,7 @@ You can also validate objects inside an array if you know the objects structure.
 e.g. In this example, we will going to validate each product present in the `products` field:
 
 ```js
-const { validate } = require('./index')
+const { validate } = require('super-easy-validator')
 
 const rules = {
   products: [
@@ -782,7 +782,7 @@ In the example above, organization field can be absent or it must be _string_.
 
 ```js
 let rules = {
-  organization: 'null|string',
+  organization: 'nullable|string',
 };
 ```
 
@@ -792,7 +792,7 @@ In the example above, organization field can be either _null_ or _string_.
 
 ```js
 let rules = {
-  age: 'optional|null|number',
+  age: 'optional|nullable|number',
 };
 ```
 
@@ -900,7 +900,7 @@ let rules = {
 };
 ```
 
-> **Note:** This validation automatically applies in cases of: `email` , `url` , `domain` , `name` , `username` , `alpha` , `alphanumeric` , `phone` , `mongoid` , `date` , `dateonly` , `time` , `lower` , `upper` , `ip` , and `regex:<value>` .
+> **Note:** This validation automatically applies in cases of: `email` , `url` , `domain` , `name` , `fullname` , `username` , `alpha` , `alphanumeric` , `phone` , `phonecode` , `mongoid` , `uuid` , `date` , `dateonly` , `time` , `lower` , `upper` , `ip` , and `regex:<value>` .
 
 ### 2. **`number`**
 
@@ -1588,12 +1588,14 @@ let rules = {
 * `arrayof:url`
 * `arrayof:domain`
 * `arrayof:name`
+* `arrayof:fullname`
 * `arrayof:username`
 * `arrayof:alpha`
 * `arrayof:alphanumeric`
 * `arrayof:phone`
 * `arrayof:phonecode`
 * `arrayof:mongoid`
+* `arrayof:uuid`
 * `arrayof:date`
 * `arrayof:dateonly`
 * `arrayof:time`

@@ -1,9 +1,15 @@
+export type RuleString = Validation | `${Validation}|${string}`;
+
 export type Rules = {
-	[key: string]: string | string[] | [Rules] | Rules;
+	[key: string]: RuleString | RuleString[] | [Rules] | Rules;
 };
 
 export interface Data {
 	[key: string]: any;
+}
+
+export interface ValidatorResult {
+	errors?: string[];
 }
 
 export type DataType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'bigint' | 'symbol';

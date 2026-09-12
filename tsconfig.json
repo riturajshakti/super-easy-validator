@@ -3,16 +3,18 @@
     "module": "CommonJS",
     "esModuleInterop": true,
     "target": "ES6",
+    "lib": ["ES2022"],
     "moduleResolution": "node",
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "*": ["node_modules/*"]
     },
-    "sourceMap": true,
+    "declaration": true,
+    "sourceMap": false,
     "strict": true,
   },
-  
+
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "scratch"]
 }
