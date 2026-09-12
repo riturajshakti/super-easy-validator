@@ -4,28 +4,42 @@ const { validate } = require('../dist/index.js')
 
 const errorsOf = (rules, data) => validate(rules, data).errors
 
-describe('regression: non-string entries in an array rule', () => {
-	const message = 'f has an invalid rule: every rule in the array must be a string'
+describe('non-string entries in an array rule throw', () => {
+	const badEntries = [
+		['a RegExp literal', /123456/i],
+		['a number', 3],
+		['null', null],
+		['an object', {}],
+		['an array', []],
+	]
 
-	test('a RegExp literal reports a clear error instead of crashing', () =>
-		assert.deepEqual(errorsOf({ f: ['string', /123456/i] }, { f: 'abc' }), [message]))
+	for (const [label, bad] of badEntries) {
+		test(`${label} throws InvalidRuleError`, () => {
+			assert.throws(() => validate({ f: ['string', bad] }, { f: 'abc' }), {
+				name: 'InvalidRuleError',
+				message: /every rule in the array must be a string/,
+			})
+		})
+	}
 
-	test('a number reports a clear error', () =>
-		assert.deepEqual(errorsOf({ f: ['string', 3] }, { f: 'abc' }), [message]))
+	test('the thrown message names the offending field', () => {
+		assert.throws(() => validate({ password: ['string', /x/] }, { password: 'a' }), /'password'/)
+	})
 
-	test('null reports a clear error', () =>
-		assert.deepEqual(errorsOf({ f: ['string', null] }, { f: 'abc' }), [message]))
+	test('a nested field is named by its full path', () => {
+		assert.throws(() => validate({ a: { b: ['string', 3] } }, { a: { b: 'x' } }), /'a\.b'/)
+	})
 
-	test('an object reports a clear error', () =>
-		assert.deepEqual(errorsOf({ f: ['string', {}] }, { f: 'abc' }), [message]))
-
-	test('never surfaces the opaque catch-all message', () => {
-		for (const bad of [/x/, 3, null, {}, []]) {
-			const errors = errorsOf({ f: ['string', bad] }, { f: 'abc' })
-			assert.ok(
-				!errors.includes('error occurred while data validation'),
-				`opaque message leaked for ${String(bad)}`
-			)
+	test('never returns the opaque catch-all instead of throwing', () => {
+		for (const [, bad] of badEntries) {
+			let returned
+			try {
+				returned = errorsOf({ f: ['string', bad] }, { f: 'abc' })
+			} catch (e) {
+				assert.equal(e.name, 'InvalidRuleError')
+				continue
+			}
+			assert.fail(`expected a throw, got ${JSON.stringify(returned)}`)
 		}
 	})
 

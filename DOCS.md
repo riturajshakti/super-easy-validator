@@ -1640,3 +1640,333 @@ function label(code: ErrorCode): string {
   }
 }
 ```
+
+---
+
+# `$or` and `$and`
+
+`$or` and `$and` combine several rules for a single field. They let one field
+accept more than one shape, and they make nested objects and arrays of objects
+optional — which is otherwise not expressible.
+
+```js
+{
+  address: {
+    $or: [
+      'string|max:60',
+      { city: 'name', pin: 'string|natural|size:6' },
+    ],
+  },
+}
+```
+
+## Semantics
+
+- **`$or`** passes if **any** branch passes. If every branch fails, it reports
+  the errors of the branch that best fits the value (see *Branch selection*).
+- **`$and`** passes only if **every** branch passes. It reports the failures of
+  all branches, so you see every unmet requirement at once.
+
+## What a branch can be
+
+A branch is anything a rule value can already be, so operators compose with
+everything else in the library:
+
+| Branch | Example |
+|---|---|
+| a rule string | `'string\|max:20'` |
+| an array of rule tokens | `['string', 'regex:/^(a)\|(b)$/']` |
+| an object rule | `{ city: 'name', pin: 'string\|size:6' }` |
+| an array-of-objects rule | `[{ title: 'string' }]` |
+| another operator | `{ $or: [...] }` |
+
+## Making a nested object optional
+
+A plain object rule is always required:
+
+```js
+validate({ addr: { city: 'name' } }, {})
+// → ['addr is required']
+```
+
+Use `$and` with `optional` to allow it to be absent:
+
+```js
+const rules = {
+  addr: { $and: ['optional', { city: 'name', pin: 'string|natural|size:6' }] },
+}
+
+validate(rules, {})                                    // → no errors
+validate(rules, { addr: { city: 'London', pin: '123456' } })  // → no errors
+validate(rules, { addr: { city: '123', pin: '123456' } })
+// → ['addr.city must be a valid name']
+```
+
+`nullable` works the same way for `null`, and both can be combined:
+
+```js
+{ profile: { $and: ['optional|nullable', { bio: 'string|max:200' }] } }
+```
+
+> The first branch is an ordinary rule string, not a special keyword. When the
+> value is absent and a branch permits `optional`, the remaining branches are
+> skipped. Same for `null` and `nullable`.
+
+## Making an array of objects optional
+
+The same pattern applies to tuple rules:
+
+```js
+const rules = {
+  products: { $and: ['optional', [{ title: 'string|min:5', price: 'positive' }]] },
+}
+
+validate(rules, {})                                  // → no errors
+validate(rules, { products: [] })                    // → no errors
+validate(rules, { products: [{ title: 'ab', price: 1 }] })
+// → ['products[0].title must have length of at least 5']
+```
+
+## Branch selection when every `$or` branch fails
+
+Reporting every branch's errors would be noisy — a three-branch `$or` could
+emit a dozen messages for one bad value. Instead `$or` reports a single
+branch's errors, chosen by:
+
+1. **Type match first.** Branches whose expected type matches the value's
+   runtime type are preferred. Object data is checked against object branches,
+   array data against array branches, and so on.
+2. **Fewest errors next.** Among those, the branch with the fewest failures
+   wins.
+3. **Declaration order last.** Ties go to the branch written first.
+
+This is why the errors are specific rather than vague:
+
+```js
+const rules = { address: { $or: ['string|max:20', { city: 'name' }] } }
+
+validate(rules, { address: { city: '123' } })
+// → ['address.city must be a valid name']     (not "address is invalid")
+
+validate(rules, { address: 'a very long street name indeed' })
+// → ['address must have length of at most 20']
+```
+
+## Discriminated unions
+
+Because a branch can be a whole object rule, tagged unions work directly:
+
+```js
+const rules = {
+  payment: {
+    $or: [
+      { type: 'equal:card', number: 'string|regex:/^[0-9]{16}$/', cvv: 'string|natural|size:3' },
+      { type: 'equal:upi', upiId: 'string|min:5' },
+      { type: 'equal:bank', account: 'string|natural|min:9', ifsc: 'string|alphanumeric|size:11' },
+    ],
+  },
+}
+```
+
+## Reporting every failure with `$and`
+
+A rule string stops at the first failure. `$and` reports all of them, which is
+what a password-strength UI needs:
+
+```js
+const rules = {
+  password: {
+    $and: [
+      'string|min:12',
+      ['regex:/[A-Z]/', 'error:must contain an uppercase letter'],
+      ['regex:/[0-9]/', 'error:must contain a digit'],
+    ],
+  },
+}
+
+validate(rules, { password: 'abc' })
+// → ['password must have length of at least 12',
+//    'must contain an uppercase letter',
+//    'must contain a digit']
+```
+
+## Nesting
+
+Operators nest to any depth, in any combination, and inside nested objects and
+arrays of objects:
+
+```js
+// $or inside $and
+{ a: { $and: ['optional', { $or: ['string|max:5', { c: 'name' }] }] } }
+
+// $and inside $or
+{ a: { $or: [{ $and: ['string', 'min:3'] }, 'number'] } }
+
+// operator inside a nested object
+{ user: { contact: { $or: ['email', 'phone'] } } }
+
+// operator inside an array of objects
+{ contacts: [{ value: { $or: ['email', 'phone'] } }] }
+```
+
+Error paths are preserved throughout — `contacts[1].value`, `a.b.c`, and so on.
+
+## Rules for writing an operator node
+
+An operator node must contain **only** its operator key. These throw an
+`InvalidRuleError`:
+
+```js
+{ a: { $or: ['string'], city: 'name' } }      // $or mixed with another key
+{ a: { $and: ['string'], $or: ['number'] } }  // two operators in one object
+{ a: { $or: 'string' } }                      // branches must be an array
+{ a: { $or: [] } }                            // at least one branch required
+{ a: { $or: ['optional', { c: 'name' }] } }   // see below
+```
+
+A `$or` branch cannot consist only of `optional` and/or `nullable`. Such a
+branch accepts *any* present value, so it would silently swallow every failure
+from the other branches:
+
+```js
+// throws — the invalid name would otherwise be accepted
+{ address: { $or: ['optional', { city: 'name' }] } }
+
+// correct — $and makes the field optional and still validates it when present
+{ address: { $and: ['optional', { city: 'name' }] } }
+```
+
+Combining a modifier with a real rule is fine, because the branch still
+constrains the value:
+
+```js
+{ address: { $or: ['optional|string', { city: 'name' }] } }   // ok
+```
+
+If you need extra keys alongside an operator, wrap them in a branch:
+
+```js
+{ a: { $and: [{ city: 'name' }, { $or: ['string', 'number'] }] } }   // ✗ wrong shape
+{ a: { $and: [{ city: 'name' }, { pin: { $or: ['string', 'number'] } }] } }   // ✓
+```
+
+## How operators interact with plain object rules
+
+An object rule value is treated as an operator node **only** when it contains
+`$and` or `$or`. Any other object is a normal nested-object rule and keeps its
+existing behaviour, including being required by default. Existing schemas are
+unaffected.
+
+## Strict mode
+
+With `strict: true` and a `$or` of object branches, the keys of the branch that
+matched count as declared:
+
+```js
+validate(
+  { a: { $or: [{ c: 'name' }] } },
+  { a: { c: 'John', extra: 1 } },
+  { strict: true }
+)
+// → ['a.extra is not required']
+```
+
+When no branch matches, strict errors from the rejected branches are
+suppressed, so you see why the value failed rather than noise about keys that
+belonged to a branch it was never going to match.
+
+Under `$and`, every branch contributes to the declared set, since all branches
+must pass:
+
+```js
+validate(
+  { a: { $and: [{ c: 'name' }, { d: 'string' }] } },
+  { a: { c: 'John', d: 'x' } },
+  { strict: true }
+)
+// → no errors: both c and d are declared
+
+validate(
+  { a: { $and: [{ c: 'name' }, { d: 'string' }] } },
+  { a: { c: 'John', d: 'x', zz: 1 } },
+  { strict: true }
+)
+// → ['a.zz is not required']
+```
+
+## TypeScript
+
+```ts
+import type { Rules } from 'super-easy-validator'
+
+const rules: Rules = {
+  address: {
+    $or: ['string|max:60', { city: 'name', pin: 'string|natural|size:6' }],
+  },
+}
+```
+
+---
+
+# Nested arrays
+
+`arrayof:` composes with itself, so an array of arrays validates at every
+depth:
+
+```js
+{ matrix: 'arrayof:arrayof:number' }
+
+validate({ matrix: 'arrayof:arrayof:number' }, { matrix: [[1, 2], [3]] })
+// → no errors
+
+validate({ matrix: 'arrayof:arrayof:number' }, { matrix: [[1], ['x']] })
+// → ['matrix[1][0] must be a valid number']
+```
+
+There is no depth limit:
+
+```js
+{ cube: 'arrayof:arrayof:arrayof:number' }
+// → 'cube[0][0][0] must be a valid number'
+```
+
+Every rule that works with `arrayof:` works at any depth, including specific
+string types and argument-based constraints:
+
+```js
+{ ids: 'arrayof:arrayof:objectid' }
+{ codes: 'arrayof:arrayof:max:2' }
+```
+
+## Nested arrays of objects
+
+A tuple rule can also nest, for an array of arrays of objects:
+
+```js
+{ grid: [[{ label: 'string', value: 'number' }]] }
+
+validate({ grid: [[{ label: 'string' }]] }, { grid: [[{ label: 1 }]] })
+// → ['grid[0][0].label must be string']
+```
+
+## Error paths
+
+Array indexes always use bracket notation and object keys use dots, at any
+combination of depth:
+
+| Structure | Example path |
+|---|---|
+| `arrayof:` | `tags[0]` |
+| nested `arrayof:` | `matrix[1][0]` |
+| `arrayof:` inside an object | `user.tags[0]` |
+| array of objects | `products[2].title` |
+| nested array of objects | `grid[0][1].label` |
+| object inside an array of objects | `orders[0].address.city` |
+
+## Making a nested array optional
+
+Combine with `$and`, exactly as for objects:
+
+```js
+{ matrix: { $and: ['optional', 'arrayof:arrayof:number'] } }
+```

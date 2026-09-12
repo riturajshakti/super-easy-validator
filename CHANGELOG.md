@@ -4,6 +4,16 @@ Full history: https://github.com/riturajshakti/super-easy-validator/releases
 
 ## 0.9.0
 
+- New: `$or` and `$and` operators combine several rules for one field. `$or`
+  passes if any branch passes; `$and` requires every branch and reports all
+  failures. Branches may be rule strings, object rules, array-of-object rules,
+  or nested operators, to any depth
+- New: `$and` with `optional` or `nullable` makes a nested object or an array
+  of objects optional — previously not expressible
+- Breaking: an unknown or malformed rule now throws `InvalidRuleError` instead
+  of being silently ignored. Previously `{ a: 'strng' }` disabled validation
+  for that field without warning. Rules are authored, not user input, so this
+  surfaces at first run rather than in production
 - New: `validate` now also returns `details` — the same messages paired with a
   stable `code`, at matching indexes. `ErrorCodes` and the `ErrorCode` /
   `ValidationDetail` types are exported. Fully backward compatible: `errors`

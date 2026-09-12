@@ -1,6 +1,6 @@
 # super-easy-validator
 
-**Validate data with rules you write as plain strings.** Zero dependencies, ~15 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
+**Validate data with rules you write as plain strings.** Zero dependencies, ~18 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
 
 ```sh
 npm i super-easy-validator
@@ -20,7 +20,7 @@ npm i super-easy-validator
 z.number().int().positive().min(18).optional()
 ```
 
-- **Zero runtime dependencies** — ~15 kB to download, ~71 kB on disk
+- **Zero runtime dependencies** — ~18 kB to download, ~84 kB on disk
 - **Type-safe rule strings** — `'mim:5'` is a compile error in TypeScript
 - Works with plain JavaScript too
 - Nested objects, arrays of objects, per-element array rules, custom messages
@@ -29,7 +29,7 @@ z.number().int().positive().min(18).optional()
 
 | Package | Download | On disk | Dependencies |
 |---|---|---|---|
-| **super-easy-validator** | **15 kB** | **71 kB** | **0** |
+| **super-easy-validator** | **18 kB** | **84 kB** | **0** |
 | express-validator | 34 kB | 6.8 MB | 2 |
 | yup | 65 kB | 780 kB | 4 |
 | valibot | 189 kB | 1.8 MB | 0 |
@@ -179,6 +179,51 @@ const { errors } = validate(rules, { age: -5, score: 'x' }, { quotes: 'backtick'
 ```
 
 → [$atleast / $atmost](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#3-atleast) · [Error options](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#11-error-options) · [Strict mode](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#12-strict-check)
+
+---
+
+## Example: one field, several valid shapes
+
+`$or` passes if **any** branch passes. `$and` requires **every** branch. Branches can be rule strings, object rules, array-of-object rules, or nested operators.
+
+```js
+const rules = {
+  // an address may be a one-line string or a structured object
+  address: {
+    $or: [
+      'string|max:60',
+      { city: 'name', pin: 'string|natural|size:6' },
+    ],
+  },
+
+  // an id from either database
+  userId: { $or: ['objectid', 'uuid'] },
+
+  // $and makes a nested object optional — absent is fine, present is validated
+  billing: {
+    $and: ['optional', { line1: 'string|min:5', city: 'name' }],
+  },
+}
+
+const { errors } = validate(rules, {
+  address: { city: 'Rock Port', pin: 'ABC' },
+  userId: '507f1f77bcf86cd799439011',
+})
+```
+
+```js
+['address.pin must be a valid numeric string']
+```
+
+`$or` reports the branch that best fits the value — object data is checked against the object branch, so you get `address.pin ...` rather than a vague "address is invalid".
+
+Use `$and` with `optional` or `nullable` to make nested objects and arrays of objects optional, which is otherwise not expressible:
+
+```js
+{ products: { $and: ['optional', [{ title: 'string|min:5', price: 'positive' }]] } }
+```
+
+→ [$or and $and in full](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#or-and-and)
 
 ---
 

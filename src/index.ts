@@ -1,5 +1,12 @@
 import { ErrorCodes, ValidationDetail } from './codes'
 import { quotes } from './config'
+import {
+	assertValidOperatorNode,
+	assertValidRuleString,
+	assertValidRuleTokens,
+	InvalidRuleError,
+	isOperatorNode,
+} from './rules'
 import { getError, getField, getPropByString, getSize } from './helpers'
 import {
 	ArrayType,
@@ -49,6 +56,9 @@ function validate(rules: Rules, data: Data, config: ValidatorConfig = defaultVal
 
 		return { errors: details.map((e) => e.message), details }
 	} catch (error) {
+		if (error instanceof InvalidRuleError) {
+			throw error
+		}
 		console.log(error)
 		const message = 'error occurred while data validation'
 		return { errors: [message], details: [{ message, code: ErrorCodes.INTERNAL_ERROR }] }
@@ -76,14 +86,26 @@ function validateInternal(
 			let validations: Validation[] = []
 			const label = variableName ? `"${variableName}.${key}"` : `"${key}"`;
 			if (typeof value === 'string') {
+				if (key !== '$atleast' && key !== '$atmost') {
+					assertValidRuleString(value as string, variableName ? `${variableName}.${key}` : key)
+				}
 				validations = (value as string).split('|') as Validation[]
 			} else if (Array.isArray(value) && typeof value[0] === 'string') {
-				const invalid = (value as unknown[]).find((e) => typeof e !== 'string')
-				if (invalid !== undefined) {
-					allErrors.push({ message: `${label} has an invalid rule: every rule in the array must be a string`, code: ErrorCodes.INVALID_RULE })
-					continue
+				const fieldName = variableName ? `${variableName}.${key}` : key
+				if (key !== '$atleast' && key !== '$atmost') {
+					assertValidRuleTokens(value as string[], fieldName)
 				}
 				validations = value as string[] as Validation[]
+			} else if (typeof value === 'object' && !Array.isArray(value) && isOperatorNode(value as object)) {
+				const _internalData = !key.includes('.') ? (data as Data)[key] : getPropByString(data as Data, key)
+				const operatorErrors = validateOperatorNode(
+					value as Record<string, unknown>,
+					_internalData,
+					config,
+					variableName ? `${variableName}.${key}` : key
+				)
+				allErrors.push(...operatorErrors)
+				continue
 			} else if (typeof value === 'object' && !Array.isArray(value)) {
 				const _internalData = (data as Data)[key]
 				if (!allErrors) {
@@ -119,14 +141,26 @@ function validateInternal(
 					allErrors.push({ message: `${label} must be of type array`, code: ErrorCodes.NOT_ARRAY })
 					continue
 				}
+				const innerRule = (value as [Rules])[0]
 				for(let i = 0; i < (_internalData as Data[]).length; i++) {
 					const _data = _internalData[i] as Data;
+					const elementPath = variableName ? `${variableName}.${key}[${i}]` : `${key}[${i}]`
+					if (Array.isArray(innerRule)) {
+						let errorsList = validateInternal(
+							{ [elementPath]: innerRule } as unknown as Rules,
+							{ [elementPath]: _data } as Data,
+							config,
+							errors
+						)
+						allErrors.push(...errorsList)
+						continue
+					}
 					let errorsList = validateInternal(
-						(value as [Rules])[0],
+						innerRule,
 						_data,
 						config,
 						errors,
-						variableName ? `${variableName}.${key}[${i}]` : `${key}[${i}]`
+						elementPath
 					)
 					allErrors.push(...errorsList)
 				}
@@ -152,6 +186,9 @@ function validateInternal(
 
 		return allErrors
 	} catch (error) {
+		if (error instanceof InvalidRuleError) {
+			throw error
+		}
 		console.log(error)
 		return [{ message: 'error occurred while data validation', code: ErrorCodes.INTERNAL_ERROR }]
 	}
@@ -248,6 +285,153 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 			}
 		}
 	}
+}
+
+function branchHasModifier(branch: unknown, modifier: 'optional' | 'nullable'): boolean {
+	if (typeof branch === 'string') {
+		return branch.split('|').includes(modifier)
+	}
+	if (Array.isArray(branch) && branch.every((e) => typeof e === 'string')) {
+		return (branch as string[]).includes(modifier)
+	}
+	return false
+}
+
+function validateBranch(
+	branch: unknown,
+	value: any,
+	config: ValidatorConfig,
+	fieldName: string
+): ValidationDetail[] {
+	const shortKey = fieldName.includes('.') ? fieldName.slice(fieldName.lastIndexOf('.') + 1) : fieldName
+	const parentName = fieldName.includes('.') ? fieldName.slice(0, fieldName.lastIndexOf('.')) : undefined
+	const wrapper: Rules = { [shortKey]: branch as Rules[string] }
+	return validateInternal(wrapper, { [shortKey]: value } as Data, config, [], parentName)
+}
+
+function branchTypeMatches(branch: unknown, value: any): boolean {
+	const isPlainObject = typeof value === 'object' && value !== null && !Array.isArray(value)
+
+	if (Array.isArray(branch)) {
+		if (branch.every((e) => typeof e === 'string')) {
+			return true
+		}
+		return Array.isArray(value)
+	}
+	if (typeof branch === 'object' && branch !== null) {
+		if (isOperatorNode(branch as object)) {
+			return true
+		}
+		return isPlainObject
+	}
+	if (typeof branch === 'string') {
+		const tokens = branch.split('|')
+		if (tokens.some((t) => t.startsWith('arrayof:'))) return Array.isArray(value)
+		if (tokens.includes('object')) return isPlainObject
+		if (tokens.includes('array')) return Array.isArray(value)
+		if (tokens.includes('string')) return typeof value === 'string'
+		if (tokens.includes('number')) return typeof value === 'number'
+		if (tokens.includes('boolean')) return typeof value === 'boolean'
+		return !isPlainObject && !Array.isArray(value)
+	}
+	return false
+}
+
+function assertUsableOrBranch(branch: unknown, fieldName: string) {
+	const tokens =
+		typeof branch === 'string'
+			? branch.split('|')
+			: Array.isArray(branch) && branch.every((e) => typeof e === 'string')
+			? (branch as string[])
+			: null
+	if (!tokens) {
+		return
+	}
+	const meaningful = tokens.filter((t) => t.length > 0 && t !== 'optional' && t !== 'nullable')
+	if (meaningful.length === 0) {
+		throw new InvalidRuleError(
+			`'${fieldName}' has an invalid rule: a '$or' branch cannot be only 'optional' or 'nullable', because it would accept any value. Use '$and' to make the field optional.`
+		)
+	}
+}
+
+function validateOperatorNode(
+	node: Record<string, unknown>,
+	value: any,
+	config: ValidatorConfig,
+	fieldName: string
+): ValidationDetail[] {
+	const { operator, branches } = assertValidOperatorNode(node, fieldName)
+
+	if (operator === '$or') {
+		for (const branch of branches) {
+			assertUsableOrBranch(branch, fieldName)
+		}
+	}
+
+	if (value === undefined && branches.some((b) => branchHasModifier(b, 'optional'))) {
+		return []
+	}
+	if (value === null && branches.some((b) => branchHasModifier(b, 'nullable'))) {
+		return []
+	}
+
+	if (operator === '$and') {
+		const objectBranches = branches.filter(
+			(b) => typeof b === 'object' && b !== null && !Array.isArray(b) && !isOperatorNode(b as object)
+		) as Rules[]
+		const mergedKeys =
+			objectBranches.length > 1 ? Object.assign({}, ...objectBranches) as Rules : undefined
+
+		const all: ValidationDetail[] = []
+		let mergedDone = false
+		for (const branch of branches) {
+			if (branchHasModifier(branch, 'optional') || branchHasModifier(branch, 'nullable')) {
+				const only = typeof branch === 'string' ? branch.split('|') : (branch as string[])
+				if (only.every((t) => t === 'optional' || t === 'nullable')) {
+					continue
+				}
+			}
+			if (mergedKeys && objectBranches.includes(branch as Rules)) {
+				if (mergedDone) {
+					continue
+				}
+				mergedDone = true
+				all.push(...validateBranch(mergedKeys, value, config, fieldName))
+				continue
+			}
+			all.push(...validateBranch(branch, value, config, fieldName))
+		}
+		return all
+	}
+
+	const attempts = branches.map((branch) => ({
+		branch,
+		errors: validateBranch(branch, value, config, fieldName),
+		typed: branchTypeMatches(branch, value),
+	}))
+
+	const passed = attempts.find((a) => a.errors.length === 0)
+	if (passed) {
+		return []
+	}
+
+	const strictOnly = attempts.find(
+		(a) => a.errors.length > 0 && a.errors.every((e) => e.code === ErrorCodes.UNEXPECTED_FIELD)
+	)
+	if (strictOnly) {
+		return strictOnly.errors
+	}
+
+	const typedAttempts = attempts.filter((a) => a.typed)
+	const pool = typedAttempts.length > 0 ? typedAttempts : attempts
+	let best = pool[0]
+	for (const attempt of pool) {
+		if (attempt.errors.length < best.errors.length) {
+			best = attempt
+		}
+	}
+	return best.errors.filter((e) => e.code !== ErrorCodes.UNEXPECTED_FIELD)
 }
 
 function validateAtleastData(data: Data, value: string[] | string, errors: ValidationDetail[], variableName = '') {
@@ -996,7 +1180,7 @@ function checkSpecificArrayType(
 				previousValidations,
 				validations,
 				newErrors,
-				variableName
+				''
 			)
 		}
 
@@ -1006,7 +1190,7 @@ function checkSpecificArrayType(
 				.split(',')
 				.includes(validation)
 		) {
-			checkDataType(elementKey, element, 'string', previousValidations, validations, newErrors, variableName)
+			checkDataType(elementKey, element, 'string', previousValidations, validations, newErrors, '')
 			if (newErrors.length) {
 				errors.push(...newErrors)
 				continue
@@ -1018,13 +1202,13 @@ function checkSpecificArrayType(
 				previousValidations,
 				validations,
 				newErrors,
-				variableName
+				''
 			)
 		}
 
 		// ! int,positive,negative,natural,whole
 		if ('int,positive,negative,natural,whole'.split(',').includes(validation)) {
-			checkDataType(elementKey, element, 'number', previousValidations, validations, newErrors, variableName)
+			checkDataType(elementKey, element, 'number', previousValidations, validations, newErrors, '')
 			if (newErrors.length) {
 				errors.push(...newErrors)
 				continue
@@ -1036,7 +1220,7 @@ function checkSpecificArrayType(
 				previousValidations,
 				validations,
 				newErrors,
-				variableName
+				''
 			)
 		}
 
@@ -1053,19 +1237,26 @@ function checkSpecificArrayType(
 				previousValidations,
 				validations,
 				newErrors,
-				variableName
+				''
 			)
 		}
 
-		// // ! Nested Array Check
-		// if (validation.startsWith('arrayof:')) {
-		// 	let arrayValidation = validation.substring(8);
-		// 	if (arrayValidation === 'optional') {
-		// 		subOptionalElement = true;
-		// 	}
-		// 	if (arrayValidation === 'nullable') {
-		// 		subNullableElement = true;
-		// 	}
+		// ! Nested Array Check
+		if (validation.startsWith('arrayof:')) {
+			checkSpecificArrayType(
+				elementKey,
+				element,
+				validation as ArrayType,
+				previousValidations,
+				validations,
+				newErrors,
+				optionalArrays,
+				nullableArrays,
+				''
+			)
+		}
+
+		// (historical reference for the previous signature)
 		// 	checkSpecificArrayType(
 		// 		`${key}[${index}]`,
 		// 		element,

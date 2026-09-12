@@ -189,8 +189,14 @@ describe('field group codes', () => {
 })
 
 describe('rule authoring codes', () => {
-	test('INVALID_RULE for a non-string rule entry', () =>
-		assert.equal(codeOf({ a: ['string', /x/] }, { a: 'y' }), ErrorCodes.INVALID_RULE))
+	test('a non-string rule entry throws rather than reporting a code', () =>
+		assert.throws(() => validate({ a: ['string', /x/] }, { a: 'y' }), { name: 'InvalidRuleError' }))
+
+	test('an unknown rule name throws', () =>
+		assert.throws(() => validate({ a: 'strng' }, { a: 'y' }), { name: 'InvalidRuleError' }))
+
+	test('INVALID_RULE remains declared for backward compatibility', () =>
+		assert.equal(ErrorCodes.INVALID_RULE, 'INVALID_RULE'))
 })
 
 describe('custom error: replaces the message but keeps the code', () => {
@@ -256,7 +262,8 @@ describe('ErrorCodes export', () => {
 			[{ a: 'enums:x' }, { a: 'z' }],
 			[{ a: 'string' }, {}],
 			[{ a: 'string' }, null],
-			[{ a: ['string', 3] }, { a: 'x' }],
+			[{ a: 'string|min:5' }, { a: 'ab' }],
+			[{ a: { $or: ['number', 'boolean'] } }, { a: 'x' }],
 		]
 		for (const [rules, data] of samples) {
 			for (const code of codesOf(rules, data)) {
