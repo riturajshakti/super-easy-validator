@@ -93,7 +93,19 @@ function validateInternal(
 			let errors = [] as ValidationDetail[]
 			let validations: Validation[] = []
 			const label = variableName ? `"${variableName}.${key}"` : `"${key}"`;
-			if (typeof value === 'string') {
+			if (typeof value === 'function') {
+				const fieldName = variableName ? `${variableName}.${key}` : key
+				const target =
+					config.arrayIndexingCheck !== false && hasIndexSyntax(key)
+						? resolveIndexedPath(data as Data, key).value
+						: !key.includes('.')
+						? (data as Data)[key]
+						: getPropByString(data as Data, key)
+				allErrors.push(
+					...runCustomRule(value as (v: any, p: any) => any, target, data as Data, fieldName)
+				)
+				continue
+			} else if (typeof value === 'string') {
 				if (key !== '$atleast' && key !== '$atmost') {
 					assertValidRuleString(value as string, variableName ? `${variableName}.${key}` : key)
 				}
@@ -115,7 +127,8 @@ function validateInternal(
 					value as Record<string, unknown>,
 					_internalData,
 					config,
-					variableName ? `${variableName}.${key}` : key
+					variableName ? `${variableName}.${key}` : key,
+					data as Data
 				)
 				allErrors.push(...operatorErrors)
 				continue
@@ -330,12 +343,53 @@ function branchHasModifier(branch: unknown, modifier: 'optional' | 'nullable'): 
 	return false
 }
 
+function runCustomRule(
+	fn: (value: any, parent: any) => any,
+	value: any,
+	parent: any,
+	fieldName: string
+): ValidationDetail[] {
+	let result
+	try {
+		result = fn(value, parent)
+	} catch (error) {
+		if (error instanceof InvalidRuleError) {
+			throw error
+		}
+		const reason = error instanceof Error ? error.message : String(error)
+		throw new InvalidRuleError(`'${fieldName}' custom rule threw an error: ${reason}`)
+	}
+
+	if (result === undefined || result === null) {
+		return []
+	}
+
+	if (
+		typeof result !== 'object' ||
+		Array.isArray(result) ||
+		typeof (result as any).message !== 'string' ||
+		typeof (result as any).code !== 'string'
+	) {
+		throw new InvalidRuleError(
+			`'${fieldName}' has an invalid custom rule: the function must return undefined, or an object with string 'message' and 'code' properties (received ${JSON.stringify(
+				result
+			)})`
+		)
+	}
+
+	return [{ message: (result as any).message, code: (result as any).code as ValidationDetail['code'] }]
+}
+
 function validateBranch(
 	branch: unknown,
 	value: any,
 	config: ValidatorConfig,
-	fieldName: string
+	fieldName: string,
+	parent?: any
 ): ValidationDetail[] {
+	if (typeof branch === 'function') {
+		return runCustomRule(branch as (v: any, p: any) => any, value, parent, fieldName)
+	}
 	const shortKey = fieldName.includes('.') ? fieldName.slice(fieldName.lastIndexOf('.') + 1) : fieldName
 	const parentName = fieldName.includes('.') ? fieldName.slice(0, fieldName.lastIndexOf('.')) : undefined
 	const wrapper: Rules = { [shortKey]: branch as Rules[string] }
@@ -345,6 +399,10 @@ function validateBranch(
 
 function branchTypeMatches(branch: unknown, value: any): boolean {
 	const isPlainObject = typeof value === 'object' && value !== null && !Array.isArray(value)
+
+	if (typeof branch === 'function') {
+		return true
+	}
 
 	if (Array.isArray(branch)) {
 		if (branch.every((e) => typeof e === 'string')) {
@@ -393,7 +451,8 @@ function validateOperatorNode(
 	node: Record<string, unknown>,
 	value: any,
 	config: ValidatorConfig,
-	fieldName: string
+	fieldName: string,
+	parent?: any
 ): ValidationDetail[] {
 	const { operator, branches } = assertValidOperatorNode(node, fieldName)
 
@@ -431,17 +490,17 @@ function validateOperatorNode(
 					continue
 				}
 				mergedDone = true
-				all.push(...validateBranch(mergedKeys, value, config, fieldName))
+				all.push(...validateBranch(mergedKeys, value, config, fieldName, parent))
 				continue
 			}
-			all.push(...validateBranch(branch, value, config, fieldName))
+			all.push(...validateBranch(branch, value, config, fieldName, parent))
 		}
 		return all
 	}
 
 	const attempts = branches.map((branch) => ({
 		branch,
-		errors: validateBranch(branch, value, config, fieldName),
+		errors: validateBranch(branch, value, config, fieldName, parent),
 		typed: branchTypeMatches(branch, value),
 	}))
 

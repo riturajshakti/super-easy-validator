@@ -4,6 +4,13 @@ Full history: https://github.com/riturajshakti/super-easy-validator/releases
 
 ## 0.9.0
 
+- New: a rule value can be a function — `(value, parent) => undefined | { message, code }`.
+  It returns `undefined` to pass, or an object you author entirely, so there is
+  no registration step and no inferred wording. `parent` is the containing
+  object, which makes cross-field checks such as password confirmation and date
+  ranges straightforward. Works anywhere a rule value is accepted, and combines
+  with built-in rules through `$and` / `$or`. A malformed return or a thrown
+  error is reported as an `InvalidRuleError` naming the field
 - New: array indexing in rule keys — `'c[0]'`, `'c[-1]'` and `'c[0:2]'` select
   elements, count from the end, and select ranges. A bracket selects elements,
   so the rule applies to each selected element. Composes with dotted paths

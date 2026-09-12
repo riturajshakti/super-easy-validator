@@ -1467,6 +1467,7 @@ console.log(errors)
   '"name" must be a valid name',
   '"age" must be a valid natural number'
 ]
+```
 
 ---
 
@@ -2075,4 +2076,156 @@ An indexed rule declares its base key, so `'c[0]'` counts `c` as declared:
 ```js
 validate({ 'c[0]': 'number' }, { c: [1] }, { strict: true })          // → no errors
 validate({ 'c[0]': 'number' }, { c: [1], z: 2 }, { strict: true })    // → ['z is not required']
+```
+
+---
+
+# Custom rules
+
+A rule value can be a function. It receives the value and its parent, and
+returns `undefined` when the value is acceptable, or an object describing the
+error:
+
+```js
+const even = (value) =>
+  typeof value === 'number' && value % 2 === 0
+    ? undefined
+    : { message: 'must be even', code: 'NOT_EVEN' }
+
+validate({ n: even }, { n: 3 })
+// → ['must be even']
+```
+
+You own both the message and the code, so nothing is inferred and no
+registration step is needed.
+
+## The contract
+
+```ts
+(value: any, parent: any) => { message: string; code: string } | undefined
+```
+
+- **`undefined`** (or `null`) means the value passed.
+- **An object** with string `message` and `code` becomes one error.
+- **Anything else** throws an `InvalidRuleError` — returning `true`, `false`,
+  a string, or a partial object is a mistake in the rule, not a validation
+  failure.
+- **A function that throws** is reported as an `InvalidRuleError` naming the
+  field, rather than being swallowed into a generic error.
+
+The function is **always called**, including when the field is absent, in
+which case `value` is `undefined`. The developer decides whether absence is an
+error:
+
+```js
+// absence is fine, anything present must be even
+const evenIfPresent = (v) => (v === undefined ? undefined : even(v))
+```
+
+## The parent parameter
+
+`parent` is the object that directly contains the field, which makes
+cross-field validation straightforward:
+
+```js
+const rules = {
+  password: 'string|min:8',
+  confirmPassword: (value, parent) =>
+    value === parent.password
+      ? undefined
+      : { message: 'passwords must match', code: 'PASSWORD_MISMATCH' },
+}
+```
+
+Inside a nested object the parent is that object; inside an array of objects it
+is the element:
+
+```js
+{ order: { total: (v, parent) => ... } }        // parent is the order object
+{ items: [{ price: (v, parent) => ... }] }      // parent is each item
+```
+
+Common uses:
+
+```js
+// a value that depends on another field
+{ type: 'enums:personal,business',
+  taxId: (v, p) => (p.type === 'business' && !v
+    ? { message: 'taxId is required for business accounts', code: 'REQUIRED_FOR_BUSINESS' }
+    : undefined) }
+
+// a range whose end depends on its start
+{ from: 'date',
+  to: (v, p) => (new Date(v) > new Date(p.from)
+    ? undefined
+    : { message: 'to must be after from', code: 'BAD_RANGE' }) }
+
+// a total that must match its parts
+{ items: 'array|arrayof:number',
+  total: (v, p) => (v === (p.items || []).reduce((a, b) => a + b, 0)
+    ? undefined
+    : { message: 'total does not match items', code: 'BAD_TOTAL' }) }
+```
+
+## Combining with built-in rules
+
+A function is a complete rule value, so combine it with string rules using
+`$and`:
+
+```js
+{ n: { $and: ['natural', even] } }
+```
+
+Both run, and both report — a non-numeric value yields the type error *and*
+the custom error. `$and` with `optional` gives the usual skip-when-absent
+behaviour:
+
+```js
+{ n: { $and: ['optional', even] } }   // absent passes; present must be even
+```
+
+A function also works as a `$or` branch, where it can satisfy the operator on
+its own:
+
+```js
+{ id: { $or: [even, 'uuid'] } }
+```
+
+## Where functions can be used
+
+Anywhere a rule value is accepted: at the top level, inside nested objects,
+inside array-of-object rules, on dotted paths, on indexed keys, and as an
+operator branch.
+
+```js
+{ 'a.n': even }
+{ 'c[0]': even }
+{ 'c[0:2]': even }
+{ u: [{ n: even }] }
+```
+
+## Codes
+
+The code you return is used verbatim in `details`, so you can define your own
+vocabulary or reuse a built-in one:
+
+```js
+const { details } = validate({ n: even }, { n: 3 })
+// [{ message: 'must be even', code: 'NOT_EVEN' }]
+```
+
+`CUSTOM_RULE_FAILED` exists in `ErrorCodes` as a conventional default if you
+have no more specific code.
+
+## TypeScript
+
+```ts
+import type { CustomRule, Rules } from 'super-easy-validator'
+
+const even: CustomRule = (value) =>
+  typeof value === 'number' && value % 2 === 0
+    ? undefined
+    : { message: 'must be even', code: 'NOT_EVEN' }
+
+const rules: Rules = { n: even }
 ```

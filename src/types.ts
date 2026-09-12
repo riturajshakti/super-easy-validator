@@ -4,12 +4,16 @@ export type { ErrorCode, ValidationDetail } from './codes';
 
 export type RuleString = Validation | `${Validation}|${string}`;
 
-export type RuleBranch = RuleString | RuleString[] | [Rules] | Rules | OperatorNode;
+export type CustomRuleResult = { message: string; code: string } | undefined | void;
+
+export type CustomRule = (value: any, parent: any) => CustomRuleResult;
+
+export type RuleBranch = RuleString | RuleString[] | [Rules] | Rules | OperatorNode | CustomRule;
 
 export type OperatorNode = { $and: RuleBranch[] } | { $or: RuleBranch[] };
 
 export type Rules = {
-	[key: string]: RuleString | RuleString[] | [Rules] | Rules | OperatorNode;
+	[key: string]: RuleString | RuleString[] | [Rules] | Rules | OperatorNode | CustomRule;
 };
 
 export interface Data {

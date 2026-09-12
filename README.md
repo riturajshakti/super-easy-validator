@@ -1,6 +1,6 @@
 # super-easy-validator
 
-**Validate data with rules you write as plain strings.** Zero dependencies, ~19 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
+**Validate data with rules you write as plain strings.** Zero dependencies, ~20 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
 
 ```sh
 npm i super-easy-validator
@@ -20,7 +20,7 @@ npm i super-easy-validator
 z.number().int().positive().min(18).optional()
 ```
 
-- **Zero runtime dependencies** — ~19 kB to download, ~90 kB on disk
+- **Zero runtime dependencies** — ~20 kB to download, ~93 kB on disk
 - **Type-safe rule strings** — `'mim:5'` is a compile error in TypeScript
 - Works with plain JavaScript too
 - Nested objects, arrays of objects, per-element array rules, custom messages
@@ -29,7 +29,7 @@ z.number().int().positive().min(18).optional()
 
 | Package | Download | On disk | Dependencies |
 |---|---|---|---|
-| **super-easy-validator** | **19 kB** | **90 kB** | **0** |
+| **super-easy-validator** | **20 kB** | **93 kB** | **0** |
 | express-validator | 34 kB | 6.8 MB | 2 |
 | yup | 65 kB | 780 kB | 4 |
 | valibot | 189 kB | 1.8 MB | 0 |
@@ -283,6 +283,35 @@ const missing = details.filter(d => d.code === ErrorCodes.REQUIRED)
 They also separate failures that share a message. `enums:` and `regex:` both report `is invalid`, but carry `ENUM_MISMATCH` and `REGEX_MISMATCH`. A custom `error:` replaces the message and keeps the code, so you can show your own wording and still branch on the cause.
 
 → [All error codes](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#error-codes)
+
+---
+
+## Custom rules
+
+A rule value can be a function. It gets the value and its parent, and returns `undefined` to pass or `{ message, code }` to fail:
+
+```js
+const rules = {
+  password: 'string|min:8',
+
+  // cross-field validation comes free, since you get the parent object
+  confirmPassword: (value, parent) =>
+    value === parent.password
+      ? undefined
+      : { message: 'passwords must match', code: 'PASSWORD_MISMATCH' },
+}
+
+validate(rules, { password: 'longenough', confirmPassword: 'different' })
+// → ['passwords must match']
+```
+
+You own the message and the code, so there is nothing to register. Combine a function with built-in rules using `$and`:
+
+```js
+{ n: { $and: ['natural', (v) => v % 2 === 0 ? undefined : { message: 'must be even', code: 'NOT_EVEN' }] } }
+```
+
+→ [Custom rules in full](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#custom-rules)
 
 ---
 
