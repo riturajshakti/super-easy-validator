@@ -1467,3 +1467,176 @@ console.log(errors)
   '"name" must be a valid name',
   '"age" must be a valid natural number'
 ]
+
+---
+
+# Error codes
+
+`validate` returns `details` alongside `errors`. Both arrays are the same
+length and share indexes, so `details[i].message === errors[i]`.
+
+```js
+const { validate, ErrorCodes } = require('super-easy-validator')
+
+const { errors, details } = validate({ age: 'natural|min:18' }, { age: 15 })
+
+errors  // ['age must be at least 18']
+details // [{ message: 'age must be at least 18', code: 'TOO_SMALL' }]
+```
+
+Both are `undefined` when validation passes, so `if (errors)` keeps working.
+
+## Why codes
+
+Message text is for humans and may change between releases. Codes are stable
+and are meant to be compared against:
+
+```js
+if (details.some(d => d.code === ErrorCodes.REQUIRED)) {
+  // a field was missing
+}
+```
+
+They also separate failures that share a message. `enums:` and `regex:` both
+produce `is invalid`:
+
+```js
+const { details } = validate({ e: 'enums:a,b', r: 'regex:/^a$/' }, { e: 'z', r: 'z' })
+// [{ message: 'e is invalid', code: 'ENUM_MISMATCH' },
+//  { message: 'r is invalid', code: 'REGEX_MISMATCH' }]
+```
+
+A custom `error:` replaces the message but keeps the code, so you can show your
+own wording and still branch on the cause:
+
+```js
+const { details } = validate({ age: 'natural|error:bad age' }, { age: -5 })
+// [{ message: 'bad age', code: 'NOT_NATURAL' }]
+```
+
+## All codes
+
+### Presence
+
+| Code | When |
+|---|---|
+| `REQUIRED` | a required field is missing or `null` |
+| `DATA_REQUIRED` | the `data` argument itself is `null`/`undefined` |
+| `DATA_NOT_OBJECT` | the `data` argument is a primitive |
+| `UNEXPECTED_FIELD` | `strict: true` and the field has no rule |
+
+### Types
+
+| Code | Rule |
+|---|---|
+| `NOT_STRING` | `string`, and `regex:` on a non-string |
+| `NOT_NUMBER` | `number` |
+| `NOT_NUMERIC_STRING` | `string\|number` |
+| `NOT_BOOLEAN` | `boolean` |
+| `NOT_BOOLEAN_STRING` | `string\|boolean` |
+| `NOT_ARRAY` | `array`, and a non-array against a `[{...}]` rule |
+| `NOT_OBJECT` | `object`, and a non-object against a nested rule |
+| `NOT_BIGINT` | `bigint` |
+| `NOT_SYMBOL` | `symbol` |
+
+### String formats
+
+| Code | Rule |
+|---|---|
+| `NOT_EMAIL` | `email` |
+| `NOT_URL` | `url` |
+| `NOT_DOMAIN` | `domain` |
+| `NOT_NAME` | `name` |
+| `NOT_FULLNAME` | `fullname` |
+| `NOT_USERNAME` | `username` |
+| `NOT_ALPHA` | `alpha` |
+| `NOT_ALPHANUMERIC` | `alphanumeric` |
+| `NOT_PHONE` | `phone` |
+| `NOT_PHONECODE` | `phonecode` |
+| `NOT_OBJECTID` | `objectid` (and deprecated `mongoid`) |
+| `NOT_UUID` | `uuid` |
+| `NOT_DATE` | `date` |
+| `NOT_DATEONLY` | `dateonly` |
+| `NOT_TIME` | `time` |
+| `NOT_IP` | `ip` |
+| `NOT_LOWERCASE` | `lower` |
+| `NOT_UPPERCASE` | `upper` |
+
+> `date` and `dateonly` produce the same message but different codes.
+
+### Numbers
+
+| Code | Rule |
+|---|---|
+| `NOT_INTEGER` | `int` |
+| `NOT_POSITIVE` | `positive` |
+| `NOT_NEGATIVE` | `negative` |
+| `NOT_NATURAL` | `natural` |
+| `NOT_WHOLE` | `whole` |
+
+> The numeric-string forms (`string|natural` and so on) use the same codes —
+> the message says which form it was.
+
+### Size and range
+
+| Code | Rule |
+|---|---|
+| `NOT_EQUAL` | `equal:` |
+| `LENGTH_MISMATCH` | `size:` on a string or array |
+| `DIGITS_MISMATCH` | `size:` on a number |
+| `TOO_SHORT` | `min:` on a string or array length |
+| `TOO_LONG` | `max:` on a string or array length |
+| `TOO_SMALL` | `min:` on a number value |
+| `TOO_LARGE` | `max:` on a number value |
+| `DATE_TOO_EARLY` | `min:` on a date |
+| `DATE_TOO_LATE` | `max:` on a date |
+
+> `min:`/`max:` mean different things by type, so they get different codes.
+> A 2-character password is `TOO_SHORT`; an age of 17 is `TOO_SMALL`.
+
+### Decimals
+
+| Code | Rule |
+|---|---|
+| `DECIMAL_SIZE_MISMATCH` | `decimalsize:` |
+| `DECIMAL_TOO_FEW` | `decimalmin:` |
+| `DECIMAL_TOO_MANY` | `decimalmax:` |
+| `NOT_A_NUMBER` | a `NaN` value against a decimal rule |
+
+### Sets and patterns
+
+| Code | Rule |
+|---|---|
+| `ENUM_MISMATCH` | `enums:` |
+| `REGEX_MISMATCH` | `regex:` |
+
+### Field groups
+
+| Code | Rule |
+|---|---|
+| `ATLEAST_NOT_MET` | `$atleast` |
+| `ATMOST_EXCEEDED` | `$atmost` |
+
+### Rule authoring
+
+These signal a mistake in your rules rather than in the data.
+
+| Code | When |
+|---|---|
+| `INVALID_RULE` | a non-string entry in a rule array |
+| `INTERNAL_ERROR` | an unexpected internal failure |
+
+## TypeScript
+
+```ts
+import { validate, ErrorCodes } from 'super-easy-validator'
+import type { ErrorCode, ValidationDetail } from 'super-easy-validator'
+
+function label(code: ErrorCode): string {
+  switch (code) {
+    case ErrorCodes.REQUIRED: return 'This field is required'
+    case ErrorCodes.TOO_SHORT: return 'Too short'
+    default: return 'Invalid value'
+  }
+}
+```

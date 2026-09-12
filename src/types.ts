@@ -1,3 +1,7 @@
+import { ValidationDetail } from './codes';
+
+export type { ErrorCode, ValidationDetail } from './codes';
+
 export type RuleString = Validation | `${Validation}|${string}`;
 
 export type Rules = {
@@ -10,6 +14,7 @@ export interface Data {
 
 export interface ValidatorResult {
 	errors?: string[];
+	details?: ValidationDetail[];
 }
 
 export type DataType = 'string' | 'number' | 'boolean' | 'array' | 'object' | 'bigint' | 'symbol';

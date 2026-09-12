@@ -4,6 +4,14 @@ Full history: https://github.com/riturajshakti/super-easy-validator/releases
 
 ## 0.9.0
 
+- New: `validate` now also returns `details` — the same messages paired with a
+  stable `code`, at matching indexes. `ErrorCodes` and the `ErrorCode` /
+  `ValidationDetail` types are exported. Fully backward compatible: `errors`
+  is unchanged in shape, content and wording
+- New: codes separate failures that share a message — `enums:` and `regex:`
+  both say "is invalid" but carry `ENUM_MISMATCH` and `REGEX_MISMATCH`, and
+  `min:` splits into `TOO_SHORT` / `TOO_SMALL` / `DATE_TOO_EARLY` by type.
+  A custom `error:` replaces the message but keeps the code
 - Security: the `name` rule was vulnerable to catastrophic backtracking (ReDoS).
   A 20-character input took ~15 seconds; both `name` and `fullname` are now
   linear-time

@@ -216,6 +216,31 @@ const oops: Rules = { age: 'mim:18' }           // ✗ compile error
 
 ---
 
+## Error codes
+
+Alongside `errors`, `validate` returns `details` — the same messages paired with a stable machine-readable code, at matching indexes.
+
+```js
+const { errors, details } = validate({ age: 'natural|min:18' }, { age: 15 })
+
+errors  // ['age must be at least 18']
+details // [{ message: 'age must be at least 18', code: 'TOO_SMALL' }]
+```
+
+Codes let you branch on *what* failed without parsing message text:
+
+```js
+const { ErrorCodes } = require('super-easy-validator')
+
+const missing = details.filter(d => d.code === ErrorCodes.REQUIRED)
+```
+
+They also separate failures that share a message. `enums:` and `regex:` both report `is invalid`, but carry `ENUM_MISMATCH` and `REGEX_MISMATCH`. A custom `error:` replaces the message and keeps the code, so you can show your own wording and still branch on the cause.
+
+→ [All error codes](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#error-codes)
+
+---
+
 ## Options
 
 ```js

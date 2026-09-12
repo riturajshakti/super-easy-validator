@@ -1,3 +1,4 @@
+import { ErrorCodes, ValidationDetail } from './codes'
 import { quotes } from './config'
 import { getError, getField, getPropByString, getSize } from './helpers'
 import {
@@ -28,20 +29,29 @@ function warnDeprecatedMongoid() {
 
 function validate(rules: Rules, data: Data, config: ValidatorConfig = defaultValidatorConfig) {
 	try {
-		let allErrors: string[] | undefined = validateInternal(rules, data, config)
+		const rawDetails: ValidationDetail[] = validateInternal(rules, data, config)
 
 		const quote = quotes[config.quotes ?? 'none']
-		allErrors = allErrors.map((e) => e.replace(/"/g, quote))
-		allErrors = [...new Set(allErrors)]
-
-		if (allErrors.length === 0) {
-			allErrors = undefined
+		const seen = new Set<string>()
+		const details: ValidationDetail[] = []
+		for (const detail of rawDetails) {
+			const message = detail.message.replace(/"/g, quote)
+			if (seen.has(message)) {
+				continue
+			}
+			seen.add(message)
+			details.push({ message, code: detail.code })
 		}
 
-		return { errors: allErrors }
+		if (details.length === 0) {
+			return { errors: undefined, details: undefined }
+		}
+
+		return { errors: details.map((e) => e.message), details }
 	} catch (error) {
 		console.log(error)
-		return { errors: ['error occurred while data validation'] }
+		const message = 'error occurred while data validation'
+		return { errors: [message], details: [{ message, code: ErrorCodes.INTERNAL_ERROR }] }
 	}
 }
 
@@ -49,20 +59,20 @@ function validateInternal(
 	rules: Rules,
 	data: Data | Data[],
 	config: ValidatorConfig = defaultValidatorConfig,
-	allErrors: string[] | undefined = [],
+	allErrors: ValidationDetail[] | undefined = [],
 	variableName?: string,
 ) {
 	try {
 		if (!data) {
-			allErrors.push(`"${variableName ?? '"data"'}" is required`)
+			allErrors.push({ message: `"${variableName ?? '"data"'}" is required`, code: ErrorCodes.DATA_REQUIRED })
 			return allErrors
 		}
 		if (typeof data !== 'object' && !Array.isArray(data)) {
-			allErrors.push(`"${variableName ?? '"data"'}" must be of type object/array`)
+			allErrors.push({ message: `"${variableName ?? '"data"'}" must be of type object/array`, code: ErrorCodes.DATA_NOT_OBJECT })
 			return allErrors
 		}
 		for (let [key, value] of Object.entries(rules)) {
-			let errors = [] as string[]
+			let errors = [] as ValidationDetail[]
 			let validations: Validation[] = []
 			const label = variableName ? `"${variableName}.${key}"` : `"${key}"`;
 			if (typeof value === 'string') {
@@ -70,7 +80,7 @@ function validateInternal(
 			} else if (Array.isArray(value) && typeof value[0] === 'string') {
 				const invalid = (value as unknown[]).find((e) => typeof e !== 'string')
 				if (invalid !== undefined) {
-					allErrors.push(`${label} has an invalid rule: every rule in the array must be a string`)
+					allErrors.push({ message: `${label} has an invalid rule: every rule in the array must be a string`, code: ErrorCodes.INVALID_RULE })
 					continue
 				}
 				validations = value as string[] as Validation[]
@@ -80,11 +90,11 @@ function validateInternal(
 					allErrors = []
 				}
 				if(_internalData === undefined || _internalData === null) {
-					allErrors.push(`${label} is required`)
+					allErrors.push({ message: `${label} is required`, code: ErrorCodes.REQUIRED })
 					continue
 				}
 				if(typeof _internalData !== 'object' || Array.isArray(_internalData)) {
-					allErrors.push(`${label} must be of type object`)
+					allErrors.push({ message: `${label} must be of type object`, code: ErrorCodes.NOT_OBJECT })
 					continue
 				}
 				let errorsList = validateInternal(
@@ -102,11 +112,11 @@ function validateInternal(
 					allErrors = []
 				}
 				if(_internalData === undefined || _internalData === null) {
-					allErrors.push(`${label} is required`)
+					allErrors.push({ message: `${label} is required`, code: ErrorCodes.REQUIRED })
 					continue
 				}
 				if(!Array.isArray(_internalData)) {
-					allErrors.push(`${label} must be of type array`)
+					allErrors.push({ message: `${label} must be of type array`, code: ErrorCodes.NOT_ARRAY })
 					continue
 				}
 				for(let i = 0; i < (_internalData as Data[]).length; i++) {
@@ -143,11 +153,11 @@ function validateInternal(
 		return allErrors
 	} catch (error) {
 		console.log(error)
-		return ['error occurred while data validation']
+		return [{ message: 'error occurred while data validation', code: ErrorCodes.INTERNAL_ERROR }]
 	}
 }
 
-function validateSingleData(key: string, value: any, validations: Validation[], errors: string[], variableName = '') {
+function validateSingleData(key: string, value: any, validations: Validation[], errors: ValidationDetail[], variableName = '') {
 	let optionalArrays: any[][] = []
 	let nullableArrays: any[][] = []
 
@@ -240,8 +250,8 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 	}
 }
 
-function validateAtleastData(data: Data, value: string[] | string, errors: string[], variableName = '') {
-	let validateAtleast = (data: Data, validations: Validation[], errors: string[], variableName = '') => {
+function validateAtleastData(data: Data, value: string[] | string, errors: ValidationDetail[], variableName = '') {
+	let validateAtleast = (data: Data, validations: Validation[], errors: ValidationDetail[], variableName = '') => {
 		let error = getError(validations)
 		let size = getSize(validations)
 		let count = 0
@@ -266,7 +276,7 @@ function validateAtleastData(data: Data, value: string[] | string, errors: strin
 		const lastVariable = variables.at(-1)
 		const isAre = size === 1 ? 'is' : 'are'
 		const message = `at least ${sizeString} of ${variablesString} ${andString} "${lastVariable}" ${isAre} required`
-		errors.push(error ?? message)
+		errors.push({ message: error ?? message, code: ErrorCodes.ATLEAST_NOT_MET })
 	}
 
 	let validations: Validation[]
@@ -281,8 +291,8 @@ function validateAtleastData(data: Data, value: string[] | string, errors: strin
 	}
 }
 
-function validateAtmostData(data: Data, value: string[] | string, errors: string[], variableName = '') {
-	let validateAtmost = (data: Data, validations: Validation[], errors: string[], variableName = '') => {
+function validateAtmostData(data: Data, value: string[] | string, errors: ValidationDetail[], variableName = '') {
+	let validateAtmost = (data: Data, validations: Validation[], errors: ValidationDetail[], variableName = '') => {
 		let error = getError(validations)
 		let size = getSize(validations)
 		let count = 0
@@ -308,7 +318,7 @@ function validateAtmostData(data: Data, value: string[] | string, errors: string
 		const andString = variables.length > 1 ? 'and' : ''
 		const lastVariable = variables.at(-1)
 		const message = `at most ${sizeString} of ${variablesString} ${andString} "${lastVariable}" can be given`
-		errors.push(error ?? message)
+		errors.push({ message: error ?? message, code: ErrorCodes.ATMOST_EXCEEDED })
 	}
 
 	let validations: Validation[]
@@ -329,7 +339,7 @@ function checkDataType(
 	dataType: DataType,
 	previousValidations: Validation[],
 	validations: Validation[],
-	errors: string[],
+	errors: ValidationDetail[],
 	variableName = ''
 ) {
 	let field = getField(validations, key)
@@ -337,50 +347,50 @@ function checkDataType(
 	const label = variableName ? `${variableName}.${field ?? key}` : `${field ?? key}`
 
 	if (value === undefined || value === null) {
-		errors.push(error ?? `"${label}" is required`)
+		errors.push({ message: error ?? `"${label}" is required`, code: ErrorCodes.REQUIRED })
 		return
 	}
 
 	if (dataType === 'symbol' && typeof value !== 'symbol') {
-		errors.push(error ?? `"${label}" must be symbol`)
+		errors.push({ message: error ?? `"${label}" must be symbol`, code: ErrorCodes.NOT_SYMBOL })
 		return
 	}
 
 	const hasString = previousValidations.includes('string') || previousValidations.includes('arrayof:string')
 
 	if (dataType === 'string' && typeof value !== 'string') {
-		errors.push(error ?? `"${label}" must be string`)
+		errors.push({ message: error ?? `"${label}" must be string`, code: ErrorCodes.NOT_STRING })
 		return
 	}
 
 	if (dataType === 'number' && hasString && Number.isNaN(+value)) {
-		errors.push(error ?? `"${label}" must be a valid numeric string`)
+		errors.push({ message: error ?? `"${label}" must be a valid numeric string`, code: ErrorCodes.NOT_NUMERIC_STRING })
 		return
 	} else if (dataType === 'number' && !hasString && typeof value !== 'number') {
-		errors.push(error ?? `"${label}" must be a valid number`)
+		errors.push({ message: error ?? `"${label}" must be a valid number`, code: ErrorCodes.NOT_NUMBER })
 		return
 	}
 
 	if (dataType === 'bigint' && typeof value !== 'bigint') {
-		errors.push(error ?? `"${label}" must be bigint`)
+		errors.push({ message: error ?? `"${label}" must be bigint`, code: ErrorCodes.NOT_BIGINT })
 		return
 	}
 
 	if (dataType === 'boolean' && hasString && !['true', 'false'].includes(value)) {
-		errors.push(error ?? `"${label}" must be a valid boolean string`)
+		errors.push({ message: error ?? `"${label}" must be a valid boolean string`, code: ErrorCodes.NOT_BOOLEAN_STRING })
 		return
 	} else if (dataType === 'boolean' && !hasString && typeof value !== 'boolean') {
-		errors.push(error ?? `"${label}" must be a valid boolean`)
+		errors.push({ message: error ?? `"${label}" must be a valid boolean`, code: ErrorCodes.NOT_BOOLEAN })
 		return
 	}
 
 	if (dataType === 'array' && !Array.isArray(value)) {
-		errors.push(error ?? `"${label}" must be an array`)
+		errors.push({ message: error ?? `"${label}" must be an array`, code: ErrorCodes.NOT_ARRAY })
 		return
 	}
 
 	if (dataType === 'object' && (Array.isArray(value) || typeof value !== 'object')) {
-		errors.push(error ?? `"${label}" must be an object`)
+		errors.push({ message: error ?? `"${label}" must be an object`, code: ErrorCodes.NOT_OBJECT })
 		return
 	}
 }
@@ -391,7 +401,7 @@ function checkSpecificStringType(
 	specificType: SpecificStringType,
 	previousValidations: Validation[],
 	validations: Validation[],
-	errors: string[],
+	errors: ValidationDetail[],
 	variableName = ''
 ) {
 	let field = getField(validations, key)
@@ -399,7 +409,7 @@ function checkSpecificStringType(
 	const label = variableName ? `${variableName}.${field ?? key}` : `${field ?? key}`
 
 	if (value === undefined || value === null) {
-		errors.push(error ?? `"${label}" is required`)
+		errors.push({ message: error ?? `"${label}" is required`, code: ErrorCodes.REQUIRED })
 		return
 	}
 
@@ -412,7 +422,7 @@ function checkSpecificStringType(
 		specificType === 'email' &&
 		!/^[A-Z0-9_'%=+!`#~$*?^{}&|-]+([\.][A-Z0-9_'%=+!`#~$*?^{}&|-]+)*@[A-Z0-9-]+(\.[A-Z0-9-]+)+$/i.test(value)
 	) {
-		errors.push(error ?? `"${label}" must be a valid email`)
+		errors.push({ message: error ?? `"${label}" must be a valid email`, code: ErrorCodes.NOT_EMAIL })
 		return
 	}
 
@@ -422,7 +432,7 @@ function checkSpecificStringType(
 			value
 		)
 	) {
-		errors.push(error ?? `"${label}" must be a valid url`)
+		errors.push({ message: error ?? `"${label}" must be a valid url`, code: ErrorCodes.NOT_URL })
 		return
 	}
 
@@ -430,12 +440,12 @@ function checkSpecificStringType(
 		specificType === 'domain' &&
 		!/^[a-zA-Z0-9][a-zA-Z0-9-_]{0,61}[a-zA-Z0-9]{0,1}\.([a-zA-Z]{1,6}|[a-zA-Z0-9-]{1,30}\.[a-zA-Z]{2,3})$/.test(value)
 	) {
-		errors.push(error ?? `"${label}" must be a valid domain`)
+		errors.push({ message: error ?? `"${label}" must be a valid domain`, code: ErrorCodes.NOT_DOMAIN })
 		return
 	}
 
 	if (specificType === 'name' && !/^\p{L}[\p{L}\p{M}]*\.?(?:[ '’\-]\p{L}[\p{L}\p{M}]*\.?)*$/u.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid name`)
+		errors.push({ message: error ?? `"${label}" must be a valid name`, code: ErrorCodes.NOT_NAME })
 		return
 	}
 
@@ -445,32 +455,32 @@ function checkSpecificStringType(
 			value
 		)
 	) {
-		errors.push(error ?? `"${label}" must be a valid fullname`)
+		errors.push({ message: error ?? `"${label}" must be a valid fullname`, code: ErrorCodes.NOT_FULLNAME })
 		return
 	}
 
 	if (specificType === 'username' && !/^[^\W_](?!.*?[._]{2})[\w.]{6,18}[^\W_]$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid username`)
+		errors.push({ message: error ?? `"${label}" must be a valid username`, code: ErrorCodes.NOT_USERNAME })
 		return
 	}
 
 	if (specificType === 'alpha' && !/^[A-Za-z]{1,}$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid alpha`)
+		errors.push({ message: error ?? `"${label}" must be a valid alpha`, code: ErrorCodes.NOT_ALPHA })
 		return
 	}
 
 	if (specificType === 'alphanumeric' && !/^[A-Za-z0-9]{1,}$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid alphanumeric`)
+		errors.push({ message: error ?? `"${label}" must be a valid alphanumeric`, code: ErrorCodes.NOT_ALPHANUMERIC })
 		return
 	}
 
 	if (specificType === 'phone' && !/^(?:\+\d{1,3}\s?)?(?:\(\d+\))?(?:\d+\s?)+(?:\d{1,4})$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid phone`)
+		errors.push({ message: error ?? `"${label}" must be a valid phone`, code: ErrorCodes.NOT_PHONE })
 		return
 	}
 
 	if (specificType === 'phonecode' && !/^\+\d{1,3}$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid phone code`)
+		errors.push({ message: error ?? `"${label}" must be a valid phone code`, code: ErrorCodes.NOT_PHONECODE })
 		return
 	}
 
@@ -478,7 +488,7 @@ function checkSpecificStringType(
 		specificType === 'uuid' &&
 		!/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/.test(value)
 	) {
-		errors.push(error ?? `"${label}" must be a valid uuid`)
+		errors.push({ message: error ?? `"${label}" must be a valid uuid`, code: ErrorCodes.NOT_UUID })
 		return
 	}
 
@@ -487,7 +497,7 @@ function checkSpecificStringType(
 			warnDeprecatedMongoid()
 		}
 		if (!/^[0-9a-fA-F]{24}$/.test(value)) {
-			errors.push(error ?? `"${label}" must be a valid object id`)
+			errors.push({ message: error ?? `"${label}" must be a valid object id`, code: ErrorCodes.NOT_OBJECTID })
 			return
 		}
 	}
@@ -498,27 +508,27 @@ function checkSpecificStringType(
 			value
 		)
 	) {
-		errors.push(error ?? `"${label}" must be a valid date`)
+		errors.push({ message: error ?? `"${label}" must be a valid date`, code: ErrorCodes.NOT_DATE })
 		return
 	}
 
 	if (specificType === 'dateonly' && !/^(\d{4})-(0[1-9]|1[0-2])-([12]\d|0[1-9]|3[01])$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid date`)
+		errors.push({ message: error ?? `"${label}" must be a valid date`, code: ErrorCodes.NOT_DATEONLY })
 		return
 	}
 
 	if (specificType === 'time' && !/^(?:[01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?(?:\.\d{1,4})?$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid time`)
+		errors.push({ message: error ?? `"${label}" must be a valid time`, code: ErrorCodes.NOT_TIME })
 		return
 	}
 
 	if (specificType === 'lower' && !/^[^A-Z]+$/.test(value)) {
-		errors.push(error ?? `"${label}" must not contains upper case letters`)
+		errors.push({ message: error ?? `"${label}" must not contains upper case letters`, code: ErrorCodes.NOT_LOWERCASE })
 		return
 	}
 
 	if (specificType === 'upper' && !/^[^a-z]+$/.test(value)) {
-		errors.push(error ?? `"${label}" must not contains lower case letters`)
+		errors.push({ message: error ?? `"${label}" must not contains lower case letters`, code: ErrorCodes.NOT_UPPERCASE })
 		return
 	}
 
@@ -526,7 +536,7 @@ function checkSpecificStringType(
 		specificType === 'ip' &&
 		!/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(value)
 	) {
-		errors.push(error ?? `"${label}" must be a valid IP address`)
+		errors.push({ message: error ?? `"${label}" must be a valid IP address`, code: ErrorCodes.NOT_IP })
 		return
 	}
 }
@@ -537,7 +547,7 @@ function checkSpecificNumberType(
 	specificType: SpecificNumberType,
 	previousValidations: Validation[],
 	validations: Validation[],
-	errors: string[],
+	errors: ValidationDetail[],
 	variableName = ''
 ) {
 	let field = getField(validations, key)
@@ -545,7 +555,7 @@ function checkSpecificNumberType(
 	const label = variableName ? `${variableName}.${field ?? key}` : `${field ?? key}`
 
 	if (value === undefined || value === null) {
-		errors.push(error ?? `"${label}" is required`)
+		errors.push({ message: error ?? `"${label}" is required`, code: ErrorCodes.REQUIRED })
 		return
 	}
 
@@ -557,42 +567,42 @@ function checkSpecificNumberType(
 	const hasString = previousValidations.includes('string') || previousValidations.includes('arrayof:string')
 
 	if (specificType === 'int' && hasString && `${+value}`.includes('.')) {
-		errors.push(error ?? `"${label}" must be a valid integer string`)
+		errors.push({ message: error ?? `"${label}" must be a valid integer string`, code: ErrorCodes.NOT_INTEGER })
 		return
 	} else if (specificType === 'int' && !hasString && `${value}`.includes('.')) {
-		errors.push(error ?? `"${label}" must be a valid integer`)
+		errors.push({ message: error ?? `"${label}" must be a valid integer`, code: ErrorCodes.NOT_INTEGER })
 		return
 	}
 
 	if (specificType === 'positive' && hasString && +value <= 0) {
-		errors.push(error ?? `"${label}" must be a valid positive numeric string`)
+		errors.push({ message: error ?? `"${label}" must be a valid positive numeric string`, code: ErrorCodes.NOT_POSITIVE })
 		return
 	} else if (specificType === 'positive' && !hasString && value <= 0) {
-		errors.push(error ?? `"${label}" must be a valid positive number`)
+		errors.push({ message: error ?? `"${label}" must be a valid positive number`, code: ErrorCodes.NOT_POSITIVE })
 		return
 	}
 
 	if (specificType === 'negative' && hasString && +value >= 0) {
-		errors.push(error ?? `"${label}" must be a valid negative numeric string`)
+		errors.push({ message: error ?? `"${label}" must be a valid negative numeric string`, code: ErrorCodes.NOT_NEGATIVE })
 		return
 	} else if (specificType === 'negative' && !hasString && value >= 0) {
-		errors.push(error ?? `"${label}" must be a valid negative number`)
+		errors.push({ message: error ?? `"${label}" must be a valid negative number`, code: ErrorCodes.NOT_NEGATIVE })
 		return
 	}
 
 	if (specificType === 'natural' && hasString && (`${+value}`.includes('.') || +value <= 0)) {
-		errors.push(error ?? `"${label}" must be a valid natural numeric string`)
+		errors.push({ message: error ?? `"${label}" must be a valid natural numeric string`, code: ErrorCodes.NOT_NATURAL })
 		return
 	} else if (specificType === 'natural' && !hasString && (`${value}`.includes('.') || value <= 0)) {
-		errors.push(error ?? `"${label}" must be a valid natural number`)
+		errors.push({ message: error ?? `"${label}" must be a valid natural number`, code: ErrorCodes.NOT_NATURAL })
 		return
 	}
 
 	if (specificType === 'whole' && hasString && (`${+value}`.includes('.') || +value < 0)) {
-		errors.push(error ?? `"${label}" must be a valid whole numeric string`)
+		errors.push({ message: error ?? `"${label}" must be a valid whole numeric string`, code: ErrorCodes.NOT_WHOLE })
 		return
 	} else if (specificType === 'whole' && !hasString && (`${value}`.includes('.') || value < 0)) {
-		errors.push(error ?? `"${label}" must be a valid whole number`)
+		errors.push({ message: error ?? `"${label}" must be a valid whole number`, code: ErrorCodes.NOT_WHOLE })
 		return
 	}
 }
@@ -603,7 +613,7 @@ function checkConstraint(
 	type: ConstraintType,
 	previousValidations: Validation[],
 	validations: Validation[],
-	errors: string[],
+	errors: ValidationDetail[],
 	variableName = ''
 ) {
 	let field = getField(validations, key)
@@ -611,7 +621,7 @@ function checkConstraint(
 	const label = variableName ? `${variableName}.${field ?? key}` : `${field ?? key}`
 
 	if (value === undefined || value === null) {
-		errors.push(error ?? `"${label}" is required`)
+		errors.push({ message: error ?? `"${label}" is required`, code: ErrorCodes.REQUIRED })
 		return
 	}
 
@@ -626,18 +636,18 @@ function checkConstraint(
 		let data = type.substring(6)
 
 		if (isString && data !== value) {
-			errors.push(error ?? `"${label}" must be equal to ${data}`)
+			errors.push({ message: error ?? `"${label}" must be equal to ${data}`, code: ErrorCodes.NOT_EQUAL })
 			return
 		}
 
 		if (isNumber && +data !== value) {
-			errors.push(error ?? `"${label}" must be equal to ${data}`)
+			errors.push({ message: error ?? `"${label}" must be equal to ${data}`, code: ErrorCodes.NOT_EQUAL })
 			return
 		}
 
 		if (typeof value === 'boolean') {
 			if ((data === 'true' && value === false) || (data === 'false' && value === true))
-				errors.push(error ?? `"${label}" must be equal to ${data}`)
+				errors.push({ message: error ?? `"${label}" must be equal to ${data}`, code: ErrorCodes.NOT_EQUAL })
 			return
 		}
 	}
@@ -647,12 +657,12 @@ function checkConstraint(
 		let size = +type.substring(5)
 
 		if (isString && !isNumeric && value.length !== size) {
-			errors.push(error ?? `"${label}" must have length ${size}`)
+			errors.push({ message: error ?? `"${label}" must have length ${size}`, code: ErrorCodes.LENGTH_MISMATCH })
 			return
 		}
 
 		if (Array.isArray(value) && value.length !== size) {
-			errors.push(error ?? `"${label}" must have length ${size}`)
+			errors.push({ message: error ?? `"${label}" must have length ${size}`, code: ErrorCodes.LENGTH_MISMATCH })
 			return
 		}
 
@@ -664,7 +674,7 @@ function checkConstraint(
 				.filter((e) => ['e', '-', '+', '.'].includes(e))
 				.join('').length
 			if (valueLength !== size) {
-				errors.push(error ?? `"${label}" must have ${size} digits`)
+				errors.push({ message: error ?? `"${label}" must have ${size} digits`, code: ErrorCodes.DIGITS_MISMATCH })
 				return
 			}
 		}
@@ -680,22 +690,22 @@ function checkConstraint(
 		if (min instanceof Date) {
 			let date = new Date(Date.parse(value))
 			if (date < min) {
-				errors.push(error ?? `"${label}" must be at least ${min.toISOString()}`)
+				errors.push({ message: error ?? `"${label}" must be at least ${min.toISOString()}`, code: ErrorCodes.DATE_TOO_EARLY })
 				return
 			}
 		} else {
 			if (isString && !isNumeric && value.length < min) {
-				errors.push(error ?? `"${label}" must have length of at least ${min}`)
+				errors.push({ message: error ?? `"${label}" must have length of at least ${min}`, code: ErrorCodes.TOO_SHORT })
 				return
 			}
 
 			if (Array.isArray(value) && value.length < min) {
-				errors.push(error ?? `"${label}" must have length of at least ${min}`)
+				errors.push({ message: error ?? `"${label}" must have length of at least ${min}`, code: ErrorCodes.TOO_SHORT })
 				return
 			}
 
 			if (((isString && isNumeric) || isNumber) && +value < min) {
-				errors.push(error ?? `"${label}" must be at least ${min}`)
+				errors.push({ message: error ?? `"${label}" must be at least ${min}`, code: ErrorCodes.TOO_SMALL })
 				return
 			}
 		}
@@ -711,22 +721,22 @@ function checkConstraint(
 		if (max instanceof Date) {
 			let date = new Date(Date.parse(value))
 			if (date > max) {
-				errors.push(error ?? `"${label}" must be at most ${max.toISOString()}`)
+				errors.push({ message: error ?? `"${label}" must be at most ${max.toISOString()}`, code: ErrorCodes.DATE_TOO_LATE })
 				return
 			}
 		} else {
 			if (isString && !isNumeric && value.length > max) {
-				errors.push(error ?? `"${label}" must have length of at most ${max}`)
+				errors.push({ message: error ?? `"${label}" must have length of at most ${max}`, code: ErrorCodes.TOO_LONG })
 				return
 			}
 
 			if (Array.isArray(value) && value.length > max) {
-				errors.push(error ?? `"${label}" must have length of at most ${max}`)
+				errors.push({ message: error ?? `"${label}" must have length of at most ${max}`, code: ErrorCodes.TOO_LONG })
 				return
 			}
 
 			if (((isString && isNumeric) || isNumber) && +value > max) {
-				errors.push(error ?? `"${label}" must be at most ${max}`)
+				errors.push({ message: error ?? `"${label}" must be at most ${max}`, code: ErrorCodes.TOO_LARGE })
 				return
 			}
 		}
@@ -741,12 +751,12 @@ function checkConstraint(
 		let regex = new RegExp(main, flags)
 
 		if (typeof value !== 'string') {
-			errors.push(error ?? `"${label}" must be of type string`)
+			errors.push({ message: error ?? `"${label}" must be of type string`, code: ErrorCodes.NOT_STRING })
 			return
 		}
 
 		if (!regex.test(value)) {
-			errors.push(error ?? `"${label}" is invalid`)
+			errors.push({ message: error ?? `"${label}" is invalid`, code: ErrorCodes.REGEX_MISMATCH })
 			return
 		}
 	}
@@ -758,11 +768,11 @@ function checkConstraint(
 		if (typeof value === 'string') {
 			let n = +value
 			if (Number.isNaN(n)) {
-				errors.push(error ?? `"${label}" must be a valid numeric string`)
+				errors.push({ message: error ?? `"${label}" must be a valid numeric string`, code: ErrorCodes.NOT_NUMERIC_STRING })
 				return
 			}
 			if (!value.includes('.') && size > 0) {
-				errors.push(error ?? `"${label}" must have ${size} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have ${size} decimal places`, code: ErrorCodes.DECIMAL_SIZE_MISMATCH })
 				return
 			}
 			let index = value.lastIndexOf('.')
@@ -773,19 +783,19 @@ function checkConstraint(
 			}
 
 			if (digits.length !== size) {
-				errors.push(error ?? `"${label}" must have ${size} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have ${size} decimal places`, code: ErrorCodes.DECIMAL_SIZE_MISMATCH })
 				return
 			}
 		}
 
 		if (typeof value === 'number') {
 			if (Number.isNaN(value)) {
-				errors.push(error ?? `"${label}" must be a value number`)
+				errors.push({ message: error ?? `"${label}" must be a value number`, code: ErrorCodes.NOT_A_NUMBER })
 				return
 			}
 			let str = `${value}`
 			if (!str.includes('.') && size > 0) {
-				errors.push(error ?? `"${label}" must have ${size} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have ${size} decimal places`, code: ErrorCodes.DECIMAL_SIZE_MISMATCH })
 				return
 			}
 			if (!str.includes('.') && size === 0) {
@@ -795,7 +805,7 @@ function checkConstraint(
 			let index = str.lastIndexOf('.')
 			let digits = str.substring(index + 1)
 			if (digits.length !== size) {
-				errors.push(error ?? `"${label}" must have ${size} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have ${size} decimal places`, code: ErrorCodes.DECIMAL_SIZE_MISMATCH })
 				return
 			}
 		}
@@ -808,11 +818,11 @@ function checkConstraint(
 		if (typeof value === 'string') {
 			let n = +value
 			if (Number.isNaN(n)) {
-				errors.push(error ?? `"${label}" must be a valid numeric string`)
+				errors.push({ message: error ?? `"${label}" must be a valid numeric string`, code: ErrorCodes.NOT_NUMERIC_STRING })
 				return
 			}
 			if (!value.includes('.') && min > 0) {
-				errors.push(error ?? `"${label}" must have at least ${min} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have at least ${min} decimal places`, code: ErrorCodes.DECIMAL_TOO_FEW })
 				return
 			}
 			let index = value.lastIndexOf('.')
@@ -823,19 +833,19 @@ function checkConstraint(
 			}
 
 			if (digits.length < min) {
-				errors.push(error ?? `"${label}" must have at least ${min} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have at least ${min} decimal places`, code: ErrorCodes.DECIMAL_TOO_FEW })
 				return
 			}
 		}
 
 		if (typeof value === 'number') {
 			if (Number.isNaN(value)) {
-				errors.push(error ?? `"${label}" must be a value number`)
+				errors.push({ message: error ?? `"${label}" must be a value number`, code: ErrorCodes.NOT_A_NUMBER })
 				return
 			}
 			let str = `${value}`
 			if (!str.includes('.') && min > 0) {
-				errors.push(error ?? `"${label}" must have at least ${min} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have at least ${min} decimal places`, code: ErrorCodes.DECIMAL_TOO_FEW })
 				return
 			}
 			if (!str.includes('.') && min === 0) {
@@ -846,7 +856,7 @@ function checkConstraint(
 			let digits = str.substring(index + 1)
 
 			if (digits.length < min) {
-				errors.push(error ?? `"${label}" must have at least ${min} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have at least ${min} decimal places`, code: ErrorCodes.DECIMAL_TOO_FEW })
 				return
 			}
 		}
@@ -859,7 +869,7 @@ function checkConstraint(
 		if (typeof value === 'string') {
 			let n = +value
 			if (Number.isNaN(n)) {
-				errors.push(error ?? `"${label}" must be a valid numeric string`)
+				errors.push({ message: error ?? `"${label}" must be a valid numeric string`, code: ErrorCodes.NOT_NUMERIC_STRING })
 				return
 			}
 
@@ -871,14 +881,14 @@ function checkConstraint(
 			let digits = value.substring(index + 1)
 
 			if (digits.length > max) {
-				errors.push(error ?? `"${label}" must have at most ${max} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have at most ${max} decimal places`, code: ErrorCodes.DECIMAL_TOO_MANY })
 				return
 			}
 		}
 
 		if (typeof value === 'number') {
 			if (Number.isNaN(value)) {
-				errors.push(error ?? `"${label}" must be a value number`)
+				errors.push({ message: error ?? `"${label}" must be a value number`, code: ErrorCodes.NOT_A_NUMBER })
 				return
 			}
 			let str = `${value}`
@@ -890,7 +900,7 @@ function checkConstraint(
 			let index = str.lastIndexOf('.')
 			let digits = str.substring(index + 1)
 			if (digits.length > max) {
-				errors.push(error ?? `"${label}" must have at most ${max} decimal places`)
+				errors.push({ message: error ?? `"${label}" must have at most ${max} decimal places`, code: ErrorCodes.DECIMAL_TOO_MANY })
 				return
 			}
 		}
@@ -902,7 +912,7 @@ function checkConstraint(
 
 		if (isString && !isNumeric) {
 			if (!array.includes(value)) {
-				errors.push(error ?? `"${label}" is invalid`)
+				errors.push({ message: error ?? `"${label}" is invalid`, code: ErrorCodes.ENUM_MISMATCH })
 				return
 			}
 		}
@@ -914,7 +924,7 @@ function checkConstraint(
 					.map((e) => +e)
 					.includes(+value)
 			) {
-				errors.push(error ?? `"${label}" is invalid`)
+				errors.push({ message: error ?? `"${label}" is invalid`, code: ErrorCodes.ENUM_MISMATCH })
 				return
 			}
 		}
@@ -926,7 +936,7 @@ function checkConstraint(
 					.map((e) => e === 'true')
 					.includes(value)
 			) {
-				errors.push(error ?? `"${label}" is invalid`)
+				errors.push({ message: error ?? `"${label}" is invalid`, code: ErrorCodes.ENUM_MISMATCH })
 				return
 			}
 		}
@@ -939,7 +949,7 @@ function checkSpecificArrayType(
 	type: ArrayType,
 	previousValidations: Validation[],
 	validations: Validation[],
-	errors: string[],
+	errors: ValidationDetail[],
 	optionalArrays: any[][],
 	nullableArrays: any[][],
 	variableName = ''
@@ -951,7 +961,7 @@ function checkSpecificArrayType(
 	let validation = type.substring(8) as Validation
 
 	if (!Array.isArray(value)) {
-		errors.push(error ?? `"${label}" must be an array`)
+		errors.push({ message: error ?? `"${label}" must be an array`, code: ErrorCodes.NOT_ARRAY })
 		return
 	}
 
@@ -970,7 +980,7 @@ function checkSpecificArrayType(
 
 	for (let index = 0; index <= array.length - 1; index++) {
 		let element = array[index]
-		let newErrors = [] as string[]
+		let newErrors = [] as ValidationDetail[]
 		let elementKey = `${label}[${index}]`
 
 		if ((isOptional && element === undefined) || (isNullable && element === null)) {
@@ -1070,7 +1080,7 @@ function checkSpecificArrayType(
 	}
 }
 
-function validateStrictCheck(rules: Rules, data: Data, errors: string[], variableName = '') {
+function validateStrictCheck(rules: Rules, data: Data, errors: ValidationDetail[], variableName = '') {
 	let ruleKeys = Object.keys(rules)
 	let dataKeys = Object.keys(data)
 	let dataTopLevelKeys = dataKeys.filter((e) => !e.includes('.'))
@@ -1078,14 +1088,15 @@ function validateStrictCheck(rules: Rules, data: Data, errors: string[], variabl
 	for (let e of dataTopLevelKeys) {
 		if (!keys.includes(e)) {
 			const label = variableName ? `${variableName}.${e}` : e
-			errors.push(`"${label}" is not required`)
+			errors.push({ message: `"${label}" is not required`, code: ErrorCodes.UNEXPECTED_FIELD })
 		}
 	}
 }
 
-const Validator = { validate }
+const Validator = { validate, ErrorCodes }
 
-export { validate }
+export { validate, ErrorCodes }
+export type { ErrorCode, ValidationDetail } from './codes'
 export default Validator
 export type {
 	Rules,
