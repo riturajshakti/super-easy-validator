@@ -496,7 +496,103 @@ if(errors) {
 
 > **NOTE:** When strict check is enabled, it strict checks for nested objects and nested array objects as well.
 
-# API
+## 13. Combining rules with `$or` and `$and`
+
+`$or` passes if **any** branch passes; `$and` requires **every** branch.
+
+```js
+const rules = {
+  // an address may be a one-line string or a structured object
+  address: { $or: ['string|max:60', { city: 'name', pin: 'string|natural|size:6' }] },
+
+  // $and with optional makes a nested object optional
+  billing: { $and: ['optional', { line1: 'string|min:5', city: 'name' }] },
+}
+```
+
+`$or` reports the branch that best fits the value, so object data checked
+against the object branch gives `address.pin ...` rather than a vague
+"address is invalid".
+
+Use `$and` with `optional` or `nullable` to make nested objects and arrays of
+objects optional, which is otherwise not expressible.
+
+> Full details: [`$or` and `$and`](#or-and-and) in the Reference.
+
+## 14. Conditional rules with `$switch`
+
+`$switch` applies **one** rule, chosen by which `case` the value matches.
+
+```js
+const rules = {
+  amount: {
+    $switch: [
+      { case: 'number|max:1000', then: 'positive', default: true },
+      { case: 'number|min:1001', then: 'positive|decimalmax:2' },
+    ],
+  },
+}
+```
+
+Each `case` is tested in order and the first match wins. If nothing matches,
+the branch marked `default: true` supplies the rule, so the error reads as
+that branch would report it.
+
+> Full details: [`$switch`](#switch) in the Reference.
+
+## 15. Custom rules
+
+A rule value can be a function. It receives the value and its parent, and
+returns `undefined` to pass or `{ message, code }` to fail.
+
+```js
+const rules = {
+  password: 'string|min:8',
+  confirmPassword: (value, parent) =>
+    value === parent.password
+      ? undefined
+      : { message: 'passwords must match', code: 'PASSWORD_MISMATCH' },
+}
+```
+
+Because the function receives the parent object, cross-field checks such as
+password confirmation and date ranges need no special syntax.
+
+> Full details: [Custom rules](#custom-rules) in the Reference.
+
+## 16. Array indexing
+
+Rule keys can select array elements by index, from the end, or by range.
+
+```js
+const rules = {
+  coords: 'array|size:2',
+  'coords[0]': 'number|min:-90|max:90',
+  'coords[1]': 'number|min:-180|max:180',
+  'history[-1]': 'date',
+  'rgb[0:3]': 'whole|max:255',
+}
+```
+
+A bracket selects elements, so the rule applies to each selected element —
+`c` is the array, while `c[0]` and `c[0:2]` are its elements.
+
+> Full details: [Array indexing](#array-indexing) in the Reference.
+
+## 17. Nested arrays
+
+`arrayof:` composes with itself, for arrays of arrays at any depth.
+
+```js
+validate({ matrix: 'arrayof:arrayof:number' }, { matrix: [[1], ['x']] })
+// → ['matrix[1][0] must be a valid number']
+```
+
+> Full details: [Nested arrays](#nested-arrays) in the Reference.
+
+---
+
+# Reference
 
 ## Optional and Nullable Types
 
@@ -1471,180 +1567,7 @@ console.log(errors)
 
 ---
 
-# Error codes
-
-`validate` returns `details` alongside `errors`. Both arrays are the same
-length and share indexes, so `details[i].message === errors[i]`.
-
-```js
-const { validate, ErrorCodes } = require('super-easy-validator')
-
-const { errors, details } = validate({ age: 'natural|min:18' }, { age: 15 })
-
-errors  // ['age must be at least 18']
-details // [{ message: 'age must be at least 18', code: 'TOO_SMALL' }]
-```
-
-Both are `undefined` when validation passes, so `if (errors)` keeps working.
-
-## Why codes
-
-Message text is for humans and may change between releases. Codes are stable
-and are meant to be compared against:
-
-```js
-if (details.some(d => d.code === ErrorCodes.REQUIRED)) {
-  // a field was missing
-}
-```
-
-They also separate failures that share a message. `enums:` and `regex:` both
-produce `is invalid`:
-
-```js
-const { details } = validate({ e: 'enums:a,b', r: 'regex:/^a$/' }, { e: 'z', r: 'z' })
-// [{ message: 'e is invalid', code: 'ENUM_MISMATCH' },
-//  { message: 'r is invalid', code: 'REGEX_MISMATCH' }]
-```
-
-A custom `error:` replaces the message but keeps the code, so you can show your
-own wording and still branch on the cause:
-
-```js
-const { details } = validate({ age: 'natural|error:bad age' }, { age: -5 })
-// [{ message: 'bad age', code: 'NOT_NATURAL' }]
-```
-
-## All codes
-
-### Presence
-
-| Code | When |
-|---|---|
-| `REQUIRED` | a required field is missing or `null` |
-| `DATA_REQUIRED` | the `data` argument itself is `null`/`undefined` |
-| `DATA_NOT_OBJECT` | the `data` argument is a primitive |
-| `UNEXPECTED_FIELD` | `strict: true` and the field has no rule |
-
-### Types
-
-| Code | Rule |
-|---|---|
-| `NOT_STRING` | `string`, and `regex:` on a non-string |
-| `NOT_NUMBER` | `number` |
-| `NOT_NUMERIC_STRING` | `string\|number` |
-| `NOT_BOOLEAN` | `boolean` |
-| `NOT_BOOLEAN_STRING` | `string\|boolean` |
-| `NOT_ARRAY` | `array`, and a non-array against a `[{...}]` rule |
-| `NOT_OBJECT` | `object`, and a non-object against a nested rule |
-| `NOT_BIGINT` | `bigint` |
-| `NOT_SYMBOL` | `symbol` |
-
-### String formats
-
-| Code | Rule |
-|---|---|
-| `NOT_EMAIL` | `email` |
-| `NOT_URL` | `url` |
-| `NOT_DOMAIN` | `domain` |
-| `NOT_NAME` | `name` |
-| `NOT_FULLNAME` | `fullname` |
-| `NOT_USERNAME` | `username` |
-| `NOT_ALPHA` | `alpha` |
-| `NOT_ALPHANUMERIC` | `alphanumeric` |
-| `NOT_PHONE` | `phone` |
-| `NOT_PHONECODE` | `phonecode` |
-| `NOT_OBJECTID` | `objectid` (and deprecated `mongoid`) |
-| `NOT_UUID` | `uuid` |
-| `NOT_DATE` | `date` |
-| `NOT_DATEONLY` | `dateonly` |
-| `NOT_TIME` | `time` |
-| `NOT_IP` | `ip` |
-| `NOT_LOWERCASE` | `lower` |
-| `NOT_UPPERCASE` | `upper` |
-
-> `date` and `dateonly` produce the same message but different codes.
-
-### Numbers
-
-| Code | Rule |
-|---|---|
-| `NOT_INTEGER` | `int` |
-| `NOT_POSITIVE` | `positive` |
-| `NOT_NEGATIVE` | `negative` |
-| `NOT_NATURAL` | `natural` |
-| `NOT_WHOLE` | `whole` |
-
-> The numeric-string forms (`string|natural` and so on) use the same codes —
-> the message says which form it was.
-
-### Size and range
-
-| Code | Rule |
-|---|---|
-| `NOT_EQUAL` | `equal:` |
-| `LENGTH_MISMATCH` | `size:` on a string or array |
-| `DIGITS_MISMATCH` | `size:` on a number |
-| `TOO_SHORT` | `min:` on a string or array length |
-| `TOO_LONG` | `max:` on a string or array length |
-| `TOO_SMALL` | `min:` on a number value |
-| `TOO_LARGE` | `max:` on a number value |
-| `DATE_TOO_EARLY` | `min:` on a date |
-| `DATE_TOO_LATE` | `max:` on a date |
-
-> `min:`/`max:` mean different things by type, so they get different codes.
-> A 2-character password is `TOO_SHORT`; an age of 17 is `TOO_SMALL`.
-
-### Decimals
-
-| Code | Rule |
-|---|---|
-| `DECIMAL_SIZE_MISMATCH` | `decimalsize:` |
-| `DECIMAL_TOO_FEW` | `decimalmin:` |
-| `DECIMAL_TOO_MANY` | `decimalmax:` |
-| `NOT_A_NUMBER` | a `NaN` value against a decimal rule |
-
-### Sets and patterns
-
-| Code | Rule |
-|---|---|
-| `ENUM_MISMATCH` | `enums:` |
-| `REGEX_MISMATCH` | `regex:` |
-
-### Field groups
-
-| Code | Rule |
-|---|---|
-| `ATLEAST_NOT_MET` | `$atleast` |
-| `ATMOST_EXCEEDED` | `$atmost` |
-
-### Rule authoring
-
-These signal a mistake in your rules rather than in the data.
-
-| Code | When |
-|---|---|
-| `INVALID_RULE` | a non-string entry in a rule array |
-| `INTERNAL_ERROR` | an unexpected internal failure |
-
-## TypeScript
-
-```ts
-import { validate, ErrorCodes } from 'super-easy-validator'
-import type { ErrorCode, ValidationDetail } from 'super-easy-validator'
-
-function label(code: ErrorCode): string {
-  switch (code) {
-    case ErrorCodes.REQUIRED: return 'This field is required'
-    case ErrorCodes.TOO_SHORT: return 'Too short'
-    default: return 'Invalid value'
-  }
-}
-```
-
----
-
-# `$or` and `$and`
+## `$or` and `$and`
 
 `$or` and `$and` combine several rules for a single field. They let one field
 accept more than one shape, and they make nested objects and arrays of objects
@@ -1661,14 +1584,14 @@ optional — which is otherwise not expressible.
 }
 ```
 
-## Semantics
+### Semantics
 
 - **`$or`** passes if **any** branch passes. If every branch fails, it reports
   the errors of the branch that best fits the value (see *Branch selection*).
 - **`$and`** passes only if **every** branch passes. It reports the failures of
   all branches, so you see every unmet requirement at once.
 
-## What a branch can be
+### What a branch can be
 
 A branch is anything a rule value can already be, so operators compose with
 everything else in the library:
@@ -1681,7 +1604,7 @@ everything else in the library:
 | an array-of-objects rule | `[{ title: 'string' }]` |
 | another operator | `{ $or: [...] }` |
 
-## Making a nested object optional
+### Making a nested object optional
 
 A plain object rule is always required:
 
@@ -1713,7 +1636,7 @@ validate(rules, { addr: { city: '123', pin: '123456' } })
 > value is absent and a branch permits `optional`, the remaining branches are
 > skipped. Same for `null` and `nullable`.
 
-## Making an array of objects optional
+### Making an array of objects optional
 
 The same pattern applies to tuple rules:
 
@@ -1728,7 +1651,7 @@ validate(rules, { products: [{ title: 'ab', price: 1 }] })
 // → ['products[0].title must have length of at least 5']
 ```
 
-## Branch selection when every `$or` branch fails
+### Branch selection when every `$or` branch fails
 
 Reporting every branch's errors would be noisy — a three-branch `$or` could
 emit a dozen messages for one bad value. Instead `$or` reports a single
@@ -1753,7 +1676,7 @@ validate(rules, { address: 'a very long street name indeed' })
 // → ['address must have length of at most 20']
 ```
 
-## Discriminated unions
+### Discriminated unions
 
 Because a branch can be a whole object rule, tagged unions work directly:
 
@@ -1769,7 +1692,7 @@ const rules = {
 }
 ```
 
-## Reporting every failure with `$and`
+### Reporting every failure with `$and`
 
 A rule string stops at the first failure. `$and` reports all of them, which is
 what a password-strength UI needs:
@@ -1791,7 +1714,7 @@ validate(rules, { password: 'abc' })
 //    'must contain a digit']
 ```
 
-## Nesting
+### Nesting
 
 Operators nest to any depth, in any combination, and inside nested objects and
 arrays of objects:
@@ -1812,7 +1735,7 @@ arrays of objects:
 
 Error paths are preserved throughout — `contacts[1].value`, `a.b.c`, and so on.
 
-## Rules for writing an operator node
+### Rules for writing an operator node
 
 An operator node must contain **only** its operator key. These throw an
 `InvalidRuleError`:
@@ -1851,14 +1774,14 @@ If you need extra keys alongside an operator, wrap them in a branch:
 { a: { $and: [{ city: 'name' }, { pin: { $or: ['string', 'number'] } }] } }   // ✓
 ```
 
-## How operators interact with plain object rules
+### How operators interact with plain object rules
 
 An object rule value is treated as an operator node **only** when it contains
 `$and` or `$or`. Any other object is a normal nested-object rule and keeps its
 existing behaviour, including being required by default. Existing schemas are
 unaffected.
 
-## Strict mode
+### Strict mode
 
 With `strict: true` and a `$or` of object branches, the keys of the branch that
 matched count as declared:
@@ -1895,7 +1818,7 @@ validate(
 // → ['a.zz is not required']
 ```
 
-## TypeScript
+### TypeScript
 
 ```ts
 import type { Rules } from 'super-easy-validator'
@@ -1909,178 +1832,158 @@ const rules: Rules = {
 
 ---
 
-# Nested arrays
-
-`arrayof:` composes with itself, so an array of arrays validates at every
-depth:
-
-```js
-{ matrix: 'arrayof:arrayof:number' }
-
-validate({ matrix: 'arrayof:arrayof:number' }, { matrix: [[1, 2], [3]] })
-// → no errors
-
-validate({ matrix: 'arrayof:arrayof:number' }, { matrix: [[1], ['x']] })
-// → ['matrix[1][0] must be a valid number']
-```
-
-There is no depth limit:
-
-```js
-{ cube: 'arrayof:arrayof:arrayof:number' }
-// → 'cube[0][0][0] must be a valid number'
-```
-
-Every rule that works with `arrayof:` works at any depth, including specific
-string types and argument-based constraints:
-
-```js
-{ ids: 'arrayof:arrayof:objectid' }
-{ codes: 'arrayof:arrayof:max:2' }
-```
-
-## Nested arrays of objects
-
-A tuple rule can also nest, for an array of arrays of objects:
-
-```js
-{ grid: [[{ label: 'string', value: 'number' }]] }
-
-validate({ grid: [[{ label: 'string' }]] }, { grid: [[{ label: 1 }]] })
-// → ['grid[0][0].label must be string']
-```
-
-## Error paths
-
-Array indexes always use bracket notation and object keys use dots, at any
-combination of depth:
-
-| Structure | Example path |
-|---|---|
-| `arrayof:` | `tags[0]` |
-| nested `arrayof:` | `matrix[1][0]` |
-| `arrayof:` inside an object | `user.tags[0]` |
-| array of objects | `products[2].title` |
-| nested array of objects | `grid[0][1].label` |
-| object inside an array of objects | `orders[0].address.city` |
-
-## Making a nested array optional
-
-Combine with `$and`, exactly as for objects:
-
-```js
-{ matrix: { $and: ['optional', 'arrayof:arrayof:number'] } }
-```
-
 ---
 
-# Array indexing
+## `$switch`
 
-Rule keys can select individual array elements, count from the end, or select
-a range. Indexing is on by default and can be turned off with the
-`arrayIndexingCheck` option.
+`$switch` picks **one** rule to apply, based on which case the value matches.
+Where `$or` asks "does this match *any* of these?", `$switch` asks "which rule
+*applies* here?" — it commits to a branch, then validates against only that
+branch, so the errors are specific rather than vague.
 
 ```js
-const rules = {
-  coords: 'array|size:2',
-  'coords[0]': 'number|min:-90|max:90',
-  'coords[1]': 'number|min:-180|max:180',
+{
+  amount: {
+    $switch: [
+      { case: 'number|max:1000', then: 'positive', default: true },
+      { case: 'number|min:1001', then: 'positive|decimalmax:2' },
+    ],
+  },
 }
-
-validate(rules, { coords: [200, -0.12] })
-// → ['coords[0] must be at most 90']
 ```
 
-## The three forms
-
-| Form | Meaning |
+| Value | Outcome |
 |---|---|
-| `c[0]` | the element at index 0 |
-| `c[-1]` | the last element; `c[-2]` the second to last |
-| `c[0:2]` | elements 0 and 1 — the rule applies to **each** selected element |
+| `500` | first case matches → `'positive'` applies |
+| `5000` | second case matches → `'positive\|decimalmax:2'` applies |
+| `5000.123` | second case matches → `must have at most 2 decimal places` |
+| `'abc'` | no case matches → the `default` branch's `then` applies → `must be a valid number` |
 
-A bracket selects elements, so the rule you write is an *element* rule. Use a
-plain key when you want to validate the array itself:
+### How a branch is chosen
+
+1. Each branch's **`case`** is tested against the value, in order.
+2. The **first** case that passes wins, and its **`then`** is applied. No later
+   case is evaluated.
+3. If **no** case passes, the branch marked **`default: true`** supplies the
+   rule, so the error reads as that branch would report it.
+4. If no case passes and there is no default, the field reports
+   `does not match any case` with the code `NO_CASE_MATCHED`.
+
+`default: true` does not disable that branch's `case` — the branch still
+matches normally. It only says "use this branch's `then` when nothing matched".
+
+### Branch shape
+
+Each branch is an object with `case`, `then`, and optionally `default`:
 
 ```js
-{ c: 'array|min:3|arrayof:natural' }   // the array: length, and every element
-{ 'c[0]': 'natural' }                  // just the first element
-{ 'c[0:2]': 'natural' }                // each of the first two elements
+{ case: <rule>, then: <rule>, default: true }
 ```
 
-## Slices
-
-Slice bounds follow `Array.prototype.slice`: the start is inclusive, the end
-exclusive, either may be omitted, and both may be negative. Out-of-range
-bounds clamp rather than error.
+Both `case` and `then` accept **any** rule value — a rule string, an array-form
+rule, an object rule, an array-of-objects rule, a custom function, or a nested
+`$and` / `$or` / `$switch`:
 
 ```js
-{ 'c[1:]': 'number' }     // from index 1 to the end
-{ 'c[:2]': 'number' }     // the first two
-{ 'c[-2:]': 'number' }    // the last two
-{ 'c[5:9]': 'number' }    // selects nothing on a short array, so it passes
+{ $switch: [
+  { case: 'object', then: { city: 'name', pin: 'string|size:6' } },
+  { case: 'array',  then: [{ title: 'string' }] },
+  { case: 'string', then: { $and: ['min:3', 'max:20'] } },
+] }
 ```
 
-Errors are reported per element, with the real index:
+### Switching on another field
+
+A `case` may be a custom function, which receives the parent object — so
+switching on a sibling field needs no special syntax:
 
 ```js
-validate({ 'c[0:2]': 'number' }, { c: ['a', 'b', 3] })
-// → ['c[0] must be a valid number', 'c[1] must be a valid number']
+{
+  type: 'enums:image,video',
+  meta: {
+    $switch: [
+      { case: (v, p) => p.type === 'image' ? undefined : { message: 'x', code: 'SKIP' },
+        then: { width: 'natural', height: 'natural' } },
+      { case: (v, p) => p.type === 'video' ? undefined : { message: 'x', code: 'SKIP' },
+        then: { duration: 'positive' } },
+    ],
+  },
+}
 ```
 
-## Combining with paths
+A bad image payload reports `meta.height is required`, not a vague "meta is
+invalid" — which is the main reason to reach for `$switch` over `$or`.
 
-Indexing composes with dotted paths, in either direction, and with nested
-arrays:
+### Combining with `$and` and `$or`
+
+`$switch` composes with the other operators in both directions:
 
 ```js
-{ 'a.c[0]': 'number' }          // index inside a nested object
-{ 'u[0].name': 'string' }       // a property of an indexed element
-{ 'u[0:2].name': 'string' }     // that property on each selected element
-{ 'order.items[0].sku': 'string|min:3' }
-{ 'c[0][1]': 'number' }         // nested arrays
+// a switch inside $and
+{ a: { $and: ['number', { $switch: [{ case: 'max:10', then: 'positive' }] }] } }
+
+// operators inside a then
+{ a: { $switch: [{ case: 'number', then: { $or: ['min:100', 'max:1'] } }] } }
+
+// optional, via $and
+{ a: { $and: ['optional', { $switch: [{ case: 'number', then: 'positive' }] }] } }
+
+// nested switches
+{ a: { $switch: [{ case: 'number', then: { $switch: [{ case: 'max:10', then: 'positive' }] } }] } }
 ```
 
-## Missing elements
+It works anywhere a rule value is accepted: nested objects, array-of-object
+rules, dotted paths and indexed keys.
 
-An index that does not exist reads as a missing field, so it reports
-`is required` and can be made optional:
+### Rules for writing a `$switch`
+
+These throw an `InvalidRuleError`:
 
 ```js
-validate({ 'c[9]': 'number' }, { c: [1] })
-// → ['c[9] is required']
-
-validate({ 'c[9]': 'optional|number' }, { c: [1] })
-// → no errors
+{ a: { $switch: {} } }                                  // must be an array
+{ a: { $switch: [] } }                                  // needs at least one branch
+{ a: { $switch: ['number'] } }                          // a branch must be an object
+{ a: { $switch: [{ then: 'number' }] } }                // a branch needs a case
+{ a: { $switch: [{ case: 'number' }] } }                // a branch needs a then
+{ a: { $switch: [{ case: 'number', then: 'positive', xx: 1 }] } }        // unknown key
+{ a: { $switch: [{ case: 'number', then: 'positive', default: 'yes' }] } } // default must be boolean
+{ a: { $switch: [...], c: 'name' } }                    // $switch must be the only key
 ```
 
-The same applies when the field is absent or is not an array.
+Only **one** branch may be marked `default: true`.
 
-## Turning indexing off
+### Strict mode
 
-Set `arrayIndexingCheck: false` to treat bracketed keys literally. Use this if
-your data genuinely contains keys such as `"c[0]"`:
+When a `$switch` selects an object `then`, that branch's keys count as
+declared:
 
 ```js
-validate({ 'c[0]': 'string' }, { 'c[0]': 'x' }, { arrayIndexingCheck: false })
-// → no errors: the key is matched literally
+validate(
+  { a: { $switch: [{ case: 'object', then: { c: 'name' } }] } },
+  { a: { c: 'John', z: 1 } },
+  { strict: true }
+)
+// → ['a.z is not required']
 ```
 
-This affects only bracket syntax. Dotted paths and ordinary keys behave the
-same either way.
+### TypeScript
 
-## Strict mode
+```ts
+import type { Rules, SwitchBranch } from 'super-easy-validator'
 
-An indexed rule declares its base key, so `'c[0]'` counts `c` as declared:
-
-```js
-validate({ 'c[0]': 'number' }, { c: [1] }, { strict: true })          // → no errors
-validate({ 'c[0]': 'number' }, { c: [1], z: 2 }, { strict: true })    // → ['z is not required']
+const rules: Rules = {
+  amount: {
+    $switch: [
+      { case: 'number|max:1000', then: 'positive', default: true },
+      { case: 'number|min:1001', then: 'positive|decimalmax:2' },
+    ],
+  },
+}
 ```
 
 ---
 
-# Custom rules
+## Custom rules
 
 A rule value can be a function. It receives the value and its parent, and
 returns `undefined` when the value is acceptable, or an object describing the
@@ -2099,7 +2002,7 @@ validate({ n: even }, { n: 3 })
 You own both the message and the code, so nothing is inferred and no
 registration step is needed.
 
-## The contract
+### The contract
 
 ```ts
 (value: any, parent: any) => { message: string; code: string } | undefined
@@ -2122,7 +2025,7 @@ error:
 const evenIfPresent = (v) => (v === undefined ? undefined : even(v))
 ```
 
-## The parent parameter
+### The parent parameter
 
 `parent` is the object that directly contains the field, which makes
 cross-field validation straightforward:
@@ -2167,7 +2070,7 @@ Common uses:
     : { message: 'total does not match items', code: 'BAD_TOTAL' }) }
 ```
 
-## Combining with built-in rules
+### Combining with built-in rules
 
 A function is a complete rule value, so combine it with string rules using
 `$and`:
@@ -2191,7 +2094,7 @@ its own:
 { id: { $or: [even, 'uuid'] } }
 ```
 
-## Where functions can be used
+### Where functions can be used
 
 Anywhere a rule value is accepted: at the top level, inside nested objects,
 inside array-of-object rules, on dotted paths, on indexed keys, and as an
@@ -2204,7 +2107,7 @@ operator branch.
 { u: [{ n: even }] }
 ```
 
-## Codes
+### Codes
 
 The code you return is used verbatim in `details`, so you can define your own
 vocabulary or reuse a built-in one:
@@ -2217,7 +2120,7 @@ const { details } = validate({ n: even }, { n: 3 })
 `CUSTOM_RULE_FAILED` exists in `ErrorCodes` as a conventional default if you
 have no more specific code.
 
-## TypeScript
+### TypeScript
 
 ```ts
 import type { CustomRule, Rules } from 'super-easy-validator'
@@ -2229,3 +2132,355 @@ const even: CustomRule = (value) =>
 
 const rules: Rules = { n: even }
 ```
+
+---
+
+---
+
+## Array indexing
+
+Rule keys can select individual array elements, count from the end, or select
+a range. Indexing is on by default and can be turned off with the
+`arrayIndexingCheck` option.
+
+```js
+const rules = {
+  coords: 'array|size:2',
+  'coords[0]': 'number|min:-90|max:90',
+  'coords[1]': 'number|min:-180|max:180',
+}
+
+validate(rules, { coords: [200, -0.12] })
+// → ['coords[0] must be at most 90']
+```
+
+### The three forms
+
+| Form | Meaning |
+|---|---|
+| `c[0]` | the element at index 0 |
+| `c[-1]` | the last element; `c[-2]` the second to last |
+| `c[0:2]` | elements 0 and 1 — the rule applies to **each** selected element |
+
+A bracket selects elements, so the rule you write is an *element* rule. Use a
+plain key when you want to validate the array itself:
+
+```js
+{ c: 'array|min:3|arrayof:natural' }   // the array: length, and every element
+{ 'c[0]': 'natural' }                  // just the first element
+{ 'c[0:2]': 'natural' }                // each of the first two elements
+```
+
+### Slices
+
+Slice bounds follow `Array.prototype.slice`: the start is inclusive, the end
+exclusive, either may be omitted, and both may be negative. Out-of-range
+bounds clamp rather than error.
+
+```js
+{ 'c[1:]': 'number' }     // from index 1 to the end
+{ 'c[:2]': 'number' }     // the first two
+{ 'c[-2:]': 'number' }    // the last two
+{ 'c[5:9]': 'number' }    // selects nothing on a short array, so it passes
+```
+
+Errors are reported per element, with the real index:
+
+```js
+validate({ 'c[0:2]': 'number' }, { c: ['a', 'b', 3] })
+// → ['c[0] must be a valid number', 'c[1] must be a valid number']
+```
+
+### Combining with paths
+
+Indexing composes with dotted paths, in either direction, and with nested
+arrays:
+
+```js
+{ 'a.c[0]': 'number' }          // index inside a nested object
+{ 'u[0].name': 'string' }       // a property of an indexed element
+{ 'u[0:2].name': 'string' }     // that property on each selected element
+{ 'order.items[0].sku': 'string|min:3' }
+{ 'c[0][1]': 'number' }         // nested arrays
+```
+
+### Missing elements
+
+An index that does not exist reads as a missing field, so it reports
+`is required` and can be made optional:
+
+```js
+validate({ 'c[9]': 'number' }, { c: [1] })
+// → ['c[9] is required']
+
+validate({ 'c[9]': 'optional|number' }, { c: [1] })
+// → no errors
+```
+
+The same applies when the field is absent or is not an array.
+
+### Turning indexing off
+
+Set `arrayIndexingCheck: false` to treat bracketed keys literally. Use this if
+your data genuinely contains keys such as `"c[0]"`:
+
+```js
+validate({ 'c[0]': 'string' }, { 'c[0]': 'x' }, { arrayIndexingCheck: false })
+// → no errors: the key is matched literally
+```
+
+This affects only bracket syntax. Dotted paths and ordinary keys behave the
+same either way.
+
+### Strict mode
+
+An indexed rule declares its base key, so `'c[0]'` counts `c` as declared:
+
+```js
+validate({ 'c[0]': 'number' }, { c: [1] }, { strict: true })          // → no errors
+validate({ 'c[0]': 'number' }, { c: [1], z: 2 }, { strict: true })    // → ['z is not required']
+```
+
+---
+
+---
+
+## Nested arrays
+
+`arrayof:` composes with itself, so an array of arrays validates at every
+depth:
+
+```js
+{ matrix: 'arrayof:arrayof:number' }
+
+validate({ matrix: 'arrayof:arrayof:number' }, { matrix: [[1, 2], [3]] })
+// → no errors
+
+validate({ matrix: 'arrayof:arrayof:number' }, { matrix: [[1], ['x']] })
+// → ['matrix[1][0] must be a valid number']
+```
+
+There is no depth limit:
+
+```js
+{ cube: 'arrayof:arrayof:arrayof:number' }
+// → 'cube[0][0][0] must be a valid number'
+```
+
+Every rule that works with `arrayof:` works at any depth, including specific
+string types and argument-based constraints:
+
+```js
+{ ids: 'arrayof:arrayof:objectid' }
+{ codes: 'arrayof:arrayof:max:2' }
+```
+
+### Nested arrays of objects
+
+A tuple rule can also nest, for an array of arrays of objects:
+
+```js
+{ grid: [[{ label: 'string', value: 'number' }]] }
+
+validate({ grid: [[{ label: 'string' }]] }, { grid: [[{ label: 1 }]] })
+// → ['grid[0][0].label must be string']
+```
+
+### Error paths
+
+Array indexes always use bracket notation and object keys use dots, at any
+combination of depth:
+
+| Structure | Example path |
+|---|---|
+| `arrayof:` | `tags[0]` |
+| nested `arrayof:` | `matrix[1][0]` |
+| `arrayof:` inside an object | `user.tags[0]` |
+| array of objects | `products[2].title` |
+| nested array of objects | `grid[0][1].label` |
+| object inside an array of objects | `orders[0].address.city` |
+
+### Making a nested array optional
+
+Combine with `$and`, exactly as for objects:
+
+```js
+{ matrix: { $and: ['optional', 'arrayof:arrayof:number'] } }
+```
+
+---
+
+---
+
+## Error codes
+
+`validate` returns `details` alongside `errors`. Both arrays are the same
+length and share indexes, so `details[i].message === errors[i]`.
+
+```js
+const { validate, ErrorCodes } = require('super-easy-validator')
+
+const { errors, details } = validate({ age: 'natural|min:18' }, { age: 15 })
+
+errors  // ['age must be at least 18']
+details // [{ message: 'age must be at least 18', code: 'TOO_SMALL' }]
+```
+
+Both are `undefined` when validation passes, so `if (errors)` keeps working.
+
+### Why codes
+
+Message text is for humans and may change between releases. Codes are stable
+and are meant to be compared against:
+
+```js
+if (details.some(d => d.code === ErrorCodes.REQUIRED)) {
+  // a field was missing
+}
+```
+
+They also separate failures that share a message. `enums:` and `regex:` both
+produce `is invalid`:
+
+```js
+const { details } = validate({ e: 'enums:a,b', r: 'regex:/^a$/' }, { e: 'z', r: 'z' })
+// [{ message: 'e is invalid', code: 'ENUM_MISMATCH' },
+//  { message: 'r is invalid', code: 'REGEX_MISMATCH' }]
+```
+
+A custom `error:` replaces the message but keeps the code, so you can show your
+own wording and still branch on the cause:
+
+```js
+const { details } = validate({ age: 'natural|error:bad age' }, { age: -5 })
+// [{ message: 'bad age', code: 'NOT_NATURAL' }]
+```
+
+### All codes
+
+#### Presence
+
+| Code | When |
+|---|---|
+| `REQUIRED` | a required field is missing or `null` |
+| `DATA_REQUIRED` | the `data` argument itself is `null`/`undefined` |
+| `DATA_NOT_OBJECT` | the `data` argument is a primitive |
+| `UNEXPECTED_FIELD` | `strict: true` and the field has no rule |
+
+#### Types
+
+| Code | Rule |
+|---|---|
+| `NOT_STRING` | `string`, and `regex:` on a non-string |
+| `NOT_NUMBER` | `number` |
+| `NOT_NUMERIC_STRING` | `string\|number` |
+| `NOT_BOOLEAN` | `boolean` |
+| `NOT_BOOLEAN_STRING` | `string\|boolean` |
+| `NOT_ARRAY` | `array`, and a non-array against a `[{...}]` rule |
+| `NOT_OBJECT` | `object`, and a non-object against a nested rule |
+| `NOT_BIGINT` | `bigint` |
+| `NOT_SYMBOL` | `symbol` |
+
+#### String formats
+
+| Code | Rule |
+|---|---|
+| `NOT_EMAIL` | `email` |
+| `NOT_URL` | `url` |
+| `NOT_DOMAIN` | `domain` |
+| `NOT_NAME` | `name` |
+| `NOT_FULLNAME` | `fullname` |
+| `NOT_USERNAME` | `username` |
+| `NOT_ALPHA` | `alpha` |
+| `NOT_ALPHANUMERIC` | `alphanumeric` |
+| `NOT_PHONE` | `phone` |
+| `NOT_PHONECODE` | `phonecode` |
+| `NOT_OBJECTID` | `objectid` (and deprecated `mongoid`) |
+| `NOT_UUID` | `uuid` |
+| `NOT_DATE` | `date` |
+| `NOT_DATEONLY` | `dateonly` |
+| `NOT_TIME` | `time` |
+| `NOT_IP` | `ip` |
+| `NOT_LOWERCASE` | `lower` |
+| `NOT_UPPERCASE` | `upper` |
+
+> `date` and `dateonly` produce the same message but different codes.
+
+#### Numbers
+
+| Code | Rule |
+|---|---|
+| `NOT_INTEGER` | `int` |
+| `NOT_POSITIVE` | `positive` |
+| `NOT_NEGATIVE` | `negative` |
+| `NOT_NATURAL` | `natural` |
+| `NOT_WHOLE` | `whole` |
+
+> The numeric-string forms (`string|natural` and so on) use the same codes —
+> the message says which form it was.
+
+#### Size and range
+
+| Code | Rule |
+|---|---|
+| `NOT_EQUAL` | `equal:` |
+| `LENGTH_MISMATCH` | `size:` on a string or array |
+| `DIGITS_MISMATCH` | `size:` on a number |
+| `TOO_SHORT` | `min:` on a string or array length |
+| `TOO_LONG` | `max:` on a string or array length |
+| `TOO_SMALL` | `min:` on a number value |
+| `TOO_LARGE` | `max:` on a number value |
+| `DATE_TOO_EARLY` | `min:` on a date |
+| `DATE_TOO_LATE` | `max:` on a date |
+
+> `min:`/`max:` mean different things by type, so they get different codes.
+> A 2-character password is `TOO_SHORT`; an age of 17 is `TOO_SMALL`.
+
+#### Decimals
+
+| Code | Rule |
+|---|---|
+| `DECIMAL_SIZE_MISMATCH` | `decimalsize:` |
+| `DECIMAL_TOO_FEW` | `decimalmin:` |
+| `DECIMAL_TOO_MANY` | `decimalmax:` |
+| `NOT_A_NUMBER` | a `NaN` value against a decimal rule |
+
+#### Sets and patterns
+
+| Code | Rule |
+|---|---|
+| `ENUM_MISMATCH` | `enums:` |
+| `REGEX_MISMATCH` | `regex:` |
+
+#### Field groups
+
+| Code | Rule |
+|---|---|
+| `ATLEAST_NOT_MET` | `$atleast` |
+| `ATMOST_EXCEEDED` | `$atmost` |
+
+#### Rule authoring
+
+These signal a mistake in your rules rather than in the data.
+
+| Code | When |
+|---|---|
+| `INVALID_RULE` | a non-string entry in a rule array |
+| `INTERNAL_ERROR` | an unexpected internal failure |
+
+### TypeScript
+
+```ts
+import { validate, ErrorCodes } from 'super-easy-validator'
+import type { ErrorCode, ValidationDetail } from 'super-easy-validator'
+
+function label(code: ErrorCode): string {
+  switch (code) {
+    case ErrorCodes.REQUIRED: return 'This field is required'
+    case ErrorCodes.TOO_SHORT: return 'Too short'
+    default: return 'Invalid value'
+  }
+}
+```
+
+---

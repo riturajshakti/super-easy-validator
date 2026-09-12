@@ -10,7 +10,16 @@ export type CustomRule = (value: any, parent: any) => CustomRuleResult;
 
 export type RuleBranch = RuleString | RuleString[] | [Rules] | Rules | OperatorNode | CustomRule;
 
-export type OperatorNode = { $and: RuleBranch[] } | { $or: RuleBranch[] };
+export interface SwitchBranch {
+	case: RuleBranch;
+	then: RuleBranch;
+	default?: boolean;
+}
+
+export type OperatorNode =
+	| { $and: RuleBranch[] }
+	| { $or: RuleBranch[] }
+	| { $switch: SwitchBranch[] };
 
 export type Rules = {
 	[key: string]: RuleString | RuleString[] | [Rules] | Rules | OperatorNode | CustomRule;

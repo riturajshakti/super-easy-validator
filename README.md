@@ -1,6 +1,6 @@
 # super-easy-validator
 
-**Validate data with rules you write as plain strings.** Zero dependencies, ~20 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
+**Validate data with rules you write as plain strings.** Zero dependencies, ~19 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
 
 ```sh
 npm i super-easy-validator
@@ -20,7 +20,7 @@ npm i super-easy-validator
 z.number().int().positive().min(18).optional()
 ```
 
-- **Zero runtime dependencies** — ~20 kB to download, ~93 kB on disk
+- **Zero runtime dependencies** — ~19 kB to download, ~90 kB on disk
 - **Type-safe rule strings** — `'mim:5'` is a compile error in TypeScript
 - Works with plain JavaScript too
 - Nested objects, arrays of objects, per-element array rules, custom messages
@@ -29,7 +29,7 @@ z.number().int().positive().min(18).optional()
 
 | Package | Download | On disk | Dependencies |
 |---|---|---|---|
-| **super-easy-validator** | **20 kB** | **93 kB** | **0** |
+| **super-easy-validator** | **19 kB** | **90 kB** | **0** |
 | express-validator | 34 kB | 6.8 MB | 2 |
 | yup | 65 kB | 780 kB | 4 |
 | valibot | 189 kB | 1.8 MB | 0 |
@@ -59,17 +59,14 @@ const rules = {
   website: 'optional|url',
 }
 
-const data = {
+const { errors } = validate(rules, {
   name: 'John',
   email: 'not-an-email',
   password: 'abc',
   age: 15,
   role: 'superuser',
   website: 'example.com',
-}
-
-const { errors } = validate(rules, data)
-if (errors) console.log(errors)
+})
 ```
 
 ```js
@@ -83,42 +80,18 @@ if (errors) console.log(errors)
 ]
 ```
 
-`errors` is `undefined` when everything passes — so `if (errors)` is the idiom.
+`errors` is `undefined` when everything passes — so `if (errors)` is the idiom. Alongside it, `details` pairs each message with a stable code at the same index:
+
+```js
+const { errors, details } = validate({ age: 'natural|min:18' }, { age: 15 })
+// details → [{ message: 'age must be at least 18', code: 'TOO_SMALL' }]
+```
 
 ---
 
-## Example: validating an Express query string
+## Structure: nested objects, arrays, and indexing
 
-Every value in `req.query` is a string, and most are optional. Rules like `objectid` and `enums:` check for a string automatically, so you only add `string` where you need a numeric-string check.
-
-```js
-const rules = {
-  limit: 'optional|string|natural|max:100',
-  page: 'optional|string|natural',
-  productId: 'optional|objectid',
-  sortBy: 'optional|enums:price,createdAt',
-}
-
-const { errors } = validate(rules, req.query)
-if (errors) return res.status(400).json({ message: errors[0] })
-```
-
-```js
-// for { limit: '500', page: '1', productId: 'abc', sortBy: 'name' }
-[
-  'limit must be at most 100',
-  'productId must be a valid object id',
-  'sortBy is invalid'
-]
-```
-
-→ [Automatic string check](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#3-automatic-string-check) · [Optional and nullable](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#5-optional-and-nullable-values)
-
----
-
-## Example: nested objects, arrays, and arrays of objects
-
-Nest rule objects as deep as you like. Use `arrayof:` to check every element, and a single-element tuple `[{...}]` to validate every object in an array.
+Nest rule objects as deep as you like. Use `arrayof:` to check every element, a single-element tuple `[{...}]` for arrays of objects, and brackets in a key to target specific elements.
 
 ```js
 const rules = {
@@ -129,13 +102,22 @@ const rules = {
   },
   tags: 'array|min:2|arrayof:string|arrayof:max:10',
   users: [{ name: 'name', age: 'natural' }],
+
+  coords: 'array|size:2',
+  'coords[0]': 'number|min:-90|max:90',   // latitude
+  'coords[1]': 'number|min:-180|max:180', // longitude
+  'history[-1]': 'date',                  // the most recent entry
+  matrix: 'arrayof:arrayof:number',       // arrays of arrays
 }
 
-const data = {
+const { errors } = validate(rules, {
   address: { city: 'Rock Port', pin: 'ABC', country: { code: 'in' } },
   tags: ['ok', 'waaaaaaaaaytoolong'],
   users: [{ name: 'Jo', age: 20 }, {}],
-}
+  coords: [200, -0.12],
+  history: ['nope'],
+  matrix: [[1], ['x']],
+})
 ```
 
 ```js
@@ -144,86 +126,91 @@ const data = {
   'address.country.code must not contains lower case letters',
   'tags[1] must have length of at most 10',
   'users[1].name is required',
-  'users[1].age is required'
+  'users[1].age is required',
+  'coords[0] must be at most 90',
+  'history[-1] must be a valid date',
+  'matrix[1][0] must be a valid number'
 ]
 ```
 
-Errors are labelled with the full path, including array indices.
-
-→ [Nested objects](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#8-nested-object-validation) · [Array rules](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#9-simple-array-validation) · [Arrays of objects](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#10-array-objects-validation)
+Errors carry the full path, including array indexes.
 
 ---
 
-## Example: field groups and custom messages
+## Operators: `$or`, `$and`, `$switch`
 
-`$atleast` and `$atmost` validate across a group of fields. `field:` renames a field in messages, `error:` replaces the message entirely, and `quotes` wraps field names.
+`$or` passes if **any** branch passes. `$and` requires **every** branch. `$switch` applies **one** rule, chosen by which `case` matches. Branches accept any rule value — strings, object rules, tuple rules, functions, or nested operators.
 
 ```js
 const rules = {
-  email: 'optional|email',
-  phone: 'optional|phone',
-  $atleast: 'email|phone',
-  age: 'natural|field:person age',
-  score: 'number|error:score must be numeric',
+  // one field, several valid shapes
+  address: { $or: ['string|max:60', { city: 'name', pin: 'string|natural|size:6' }] },
+
+  // $and with optional makes a nested object or array optional
+  billing: { $and: ['optional', { line1: 'string|min:5', city: 'name' }] },
+  products: { $and: ['optional', [{ title: 'string|min:5', price: 'positive' }]] },
+
+  // one rule chosen by case; default supplies the error when nothing matches
+  amount: {
+    $switch: [
+      { case: 'number|max:1000', then: 'positive', default: true },
+      { case: 'number|min:1001', then: 'positive|decimalmax:2' },
+    ],
+  },
 }
 
-const { errors } = validate(rules, { age: -5, score: 'x' }, { quotes: 'backtick' })
+validate(rules, { address: { city: 'Rock Port', pin: 'ABC' }, amount: 'abc' })
 ```
 
 ```js
 [
-  'at least one of `email` and `phone` is required',
-  '`person age` must be a valid natural number',
-  'score must be numeric'
+  'address.pin must be a valid numeric string',
+  'amount must be a valid number'
 ]
 ```
 
-→ [$atleast / $atmost](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#3-atleast) · [Error options](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#11-error-options) · [Strict mode](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#12-strict-check)
+`$or` reports the branch that best fits the value, so you get `address.pin ...` rather than a vague "address is invalid". `$and` with `optional` solves optional nested objects and arrays, which are otherwise not expressible.
+
+→ [$or and $and](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#or-and-and) · [$switch](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#switch)
 
 ---
 
-## Example: one field, several valid shapes
+## Custom rules and cross-field validation
 
-`$or` passes if **any** branch passes. `$and` requires **every** branch. Branches can be rule strings, object rules, array-of-object rules, or nested operators.
+A rule value can be a function. It gets the value and its parent, and returns `undefined` to pass or `{ message, code }` to fail — so you own the wording and the code, and cross-field checks need no special syntax.
 
 ```js
 const rules = {
-  // an address may be a one-line string or a structured object
-  address: {
-    $or: [
-      'string|max:60',
-      { city: 'name', pin: 'string|natural|size:6' },
-    ],
-  },
+  password: 'string|min:8',
+  confirmPassword: (value, parent) =>
+    value === parent.password
+      ? undefined
+      : { message: 'passwords must match', code: 'PASSWORD_MISMATCH' },
 
-  // an id from either database
-  userId: { $or: ['objectid', 'uuid'] },
-
-  // $and makes a nested object optional — absent is fine, present is validated
-  billing: {
-    $and: ['optional', { line1: 'string|min:5', city: 'name' }],
-  },
+  from: 'date',
+  to: (value, parent) =>
+    new Date(value) > new Date(parent.from)
+      ? undefined
+      : { message: 'to must be after from', code: 'BAD_RANGE' },
 }
 
-const { errors } = validate(rules, {
-  address: { city: 'Rock Port', pin: 'ABC' },
-  userId: '507f1f77bcf86cd799439011',
+validate(rules, {
+  password: 'longenough', confirmPassword: 'different',
+  from: '2024-06-01', to: '2024-01-01',
 })
 ```
 
 ```js
-['address.pin must be a valid numeric string']
+['passwords must match', 'to must be after from']
 ```
 
-`$or` reports the branch that best fits the value — object data is checked against the object branch, so you get `address.pin ...` rather than a vague "address is invalid".
-
-Use `$and` with `optional` or `nullable` to make nested objects and arrays of objects optional, which is otherwise not expressible:
+Combine a function with built-in rules through `$and`:
 
 ```js
-{ products: { $and: ['optional', [{ title: 'string|min:5', price: 'positive' }]] } }
+{ n: { $and: ['natural', (v) => v % 2 === 0 ? undefined : { message: 'must be even', code: 'NOT_EVEN' }] } }
 ```
 
-→ [$or and $and in full](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#or-and-and)
+→ [Custom rules](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#custom-rules)
 
 ---
 
@@ -239,11 +226,14 @@ Combine rules with `|`, or pass an array — `['string', 'min:3']` — when a ru
 | **Numbers** | `int` `positive` `negative` `natural` `whole` |
 | **Constraints** | `equal:` `size:` `min:` `max:` `regex:` `decimalsize:` `decimalmin:` `decimalmax:` `enums:` |
 | **Arrays** | `arrayof:<any rule above>` |
+| **Operators** | `$or` `$and` `$switch` |
 | **Messages** | `field:` `error:` and a `quotes` option |
 
 String rules check for a string automatically; number rules check for a number. Prefix with `string` to validate numeric or boolean strings — `'string|natural'`, `'string|boolean'`.
 
-→ [Complete API reference, with an example for every rule](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#api)
+An unknown rule throws `InvalidRuleError` rather than being ignored, so a typo surfaces at first run.
+
+→ [Complete API reference, with an example for every rule](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#reference)
 
 ---
 
@@ -258,85 +248,6 @@ import type { Rules } from 'super-easy-validator'
 const rules: Rules = { age: 'natural|min:18' }  // ✓
 const oops: Rules = { age: 'mim:18' }           // ✗ compile error
 ```
-
----
-
-## Error codes
-
-Alongside `errors`, `validate` returns `details` — the same messages paired with a stable machine-readable code, at matching indexes.
-
-```js
-const { errors, details } = validate({ age: 'natural|min:18' }, { age: 15 })
-
-errors  // ['age must be at least 18']
-details // [{ message: 'age must be at least 18', code: 'TOO_SMALL' }]
-```
-
-Codes let you branch on *what* failed without parsing message text:
-
-```js
-const { ErrorCodes } = require('super-easy-validator')
-
-const missing = details.filter(d => d.code === ErrorCodes.REQUIRED)
-```
-
-They also separate failures that share a message. `enums:` and `regex:` both report `is invalid`, but carry `ENUM_MISMATCH` and `REGEX_MISMATCH`. A custom `error:` replaces the message and keeps the code, so you can show your own wording and still branch on the cause.
-
-→ [All error codes](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#error-codes)
-
----
-
-## Custom rules
-
-A rule value can be a function. It gets the value and its parent, and returns `undefined` to pass or `{ message, code }` to fail:
-
-```js
-const rules = {
-  password: 'string|min:8',
-
-  // cross-field validation comes free, since you get the parent object
-  confirmPassword: (value, parent) =>
-    value === parent.password
-      ? undefined
-      : { message: 'passwords must match', code: 'PASSWORD_MISMATCH' },
-}
-
-validate(rules, { password: 'longenough', confirmPassword: 'different' })
-// → ['passwords must match']
-```
-
-You own the message and the code, so there is nothing to register. Combine a function with built-in rules using `$and`:
-
-```js
-{ n: { $and: ['natural', (v) => v % 2 === 0 ? undefined : { message: 'must be even', code: 'NOT_EVEN' }] } }
-```
-
-→ [Custom rules in full](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#custom-rules)
-
----
-
-## Array indexing
-
-Rule keys can target individual array elements, count from the end, or select a range:
-
-```js
-const rules = {
-  coords: 'array|size:2',
-  'coords[0]': 'number|min:-90|max:90',   // latitude
-  'coords[1]': 'number|min:-180|max:180', // longitude
-  'history[-1]': 'date',                  // the most recent entry
-  'rgb[0:3]': 'whole|max:255',            // each of the first three
-}
-```
-
-A bracket selects elements, so the rule applies to each selected element — `c` alone is the array, `c[0]` is one element. Slices follow `Array.prototype.slice`, and errors report the real index:
-
-```js
-validate({ 'c[0:2]': 'number' }, { c: ['a', 'b', 3] })
-// → ['c[0] must be a valid number', 'c[1] must be a valid number']
-```
-
-→ [Array indexing in full](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md#array-indexing)
 
 ---
 

@@ -469,6 +469,32 @@ function validateOperatorNode(
 		return []
 	}
 
+	if (operator === '$switch') {
+		let fallback: { then: unknown } | undefined
+
+		for (const raw of branches) {
+			const branch = raw as { case: unknown; then: unknown; default?: boolean }
+			if (branch.default === true) {
+				fallback = branch
+			}
+			const caseErrors = validateBranch(branch.case, value, config, fieldName, parent)
+			if (caseErrors.length === 0) {
+				return validateBranch(branch.then, value, config, fieldName, parent)
+			}
+		}
+
+		if (fallback) {
+			return validateBranch(fallback.then, value, config, fieldName, parent)
+		}
+
+		return [
+			{
+				message: `"${fieldName}" does not match any case`,
+				code: ErrorCodes.NO_CASE_MATCHED,
+			},
+		]
+	}
+
 	if (operator === '$and') {
 		const objectBranches = branches.filter(
 			(b) => typeof b === 'object' && b !== null && !Array.isArray(b) && !isOperatorNode(b as object)
@@ -1150,7 +1176,7 @@ function checkConstraint(
 				return
 			}
 
-			if (!value.includes('.') && max > 0) {
+			if (!value.includes('.')) {
 				return
 			}
 
@@ -1170,7 +1196,7 @@ function checkConstraint(
 			}
 			let str = `${value}`
 
-			if (!str.includes('.') && max > 0) {
+			if (!str.includes('.')) {
 				return
 			}
 
@@ -1349,17 +1375,6 @@ function checkSpecificArrayType(
 			)
 		}
 
-		// (historical reference for the previous signature)
-		// 	checkSpecificArrayType(
-		// 		`${key}[${index}]`,
-		// 		element,
-		// 		validation as ArrayType,
-		// 		newErrors,
-		// 		subOptionalElement,
-		// 		subNullableElement
-		// 	);
-		// }
-
 		errors.push(...newErrors)
 	}
 }
@@ -1398,6 +1413,11 @@ export type {
 	SpecificNumberType,
 	ConstraintType,
 	ArrayType,
+	RuleBranch,
+	OperatorNode,
+	SwitchBranch,
+	CustomRule,
+	CustomRuleResult,
 } from './types'
 
 module.exports = Validator

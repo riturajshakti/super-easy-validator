@@ -48,7 +48,7 @@ const ARGUMENT_RULES = new Set([
 	'error',
 ])
 
-export const OPERATORS = new Set(['$and', '$or'])
+export const OPERATORS = new Set(['$and', '$or', '$switch'])
 
 export const GROUP_KEYS = new Set(['$atleast', '$atmost'])
 
@@ -138,5 +138,50 @@ export function assertValidOperatorNode(value: Record<string, unknown>, field: s
 		throw new InvalidRuleError(`'${field}' has an invalid rule: '${operator}' needs at least one branch`)
 	}
 
+	if (operator === '$switch') {
+		assertValidSwitchBranches(branches, field)
+	}
+
 	return { operator, branches }
+}
+
+export function assertValidSwitchBranches(branches: unknown[], field: string) {
+	let defaults = 0
+
+	for (const branch of branches) {
+		if (typeof branch !== 'object' || branch === null || Array.isArray(branch)) {
+			throw new InvalidRuleError(
+				`'${field}' has an invalid rule: every '$switch' branch must be an object with 'case' and 'then'`
+			)
+		}
+
+		const b = branch as Record<string, unknown>
+		const extras = Object.keys(b).filter((k) => !['case', 'then', 'default'].includes(k))
+		if (extras.length > 0) {
+			throw new InvalidRuleError(
+				`'${field}' has an invalid rule: a '$switch' branch accepts only 'case', 'then' and 'default' (found: ${extras.join(
+					', '
+				)})`
+			)
+		}
+
+		if (b.case === undefined) {
+			throw new InvalidRuleError(`'${field}' has an invalid rule: a '$switch' branch needs a 'case'`)
+		}
+		if (b.then === undefined) {
+			throw new InvalidRuleError(`'${field}' has an invalid rule: a '$switch' branch needs a 'then'`)
+		}
+		if (b.default !== undefined && typeof b.default !== 'boolean') {
+			throw new InvalidRuleError(`'${field}' has an invalid rule: '$switch' 'default' must be a boolean`)
+		}
+		if (b.default === true) {
+			defaults++
+		}
+	}
+
+	if (defaults > 1) {
+		throw new InvalidRuleError(
+			`'${field}' has an invalid rule: only one '$switch' branch may be marked 'default'`
+		)
+	}
 }
