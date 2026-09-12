@@ -2,95 +2,131 @@ const { test, describe } = require('node:test')
 const assert = require('node:assert/strict')
 const { validate } = require('../dist/index.js')
 
-describe('README: basic usage example', () => {
-	const rules = {
-		mail: 'optional|email',
-		phone: 'optional|phone',
-		$atleast: 'mail|phone',
-		$atmost: 'mail|phone|size:1',
-		name: 'name|field:person name',
-		gender: 'enums:male,female',
-		adult: 'enums:true,false',
-		id: 'uuid',
-		creditCard: 'string|regex:/^[0-9]{16}$/',
-		isMarried: 'boolean',
-		userId: 'mongoid',
-		profile: 'url',
-		password: 'string|min:3|max:15',
-		favoriteFoods: 'array|min:3|max:6',
-		rating: 'number|enums:1,2,3,4,5|error:rating is not correct, please fix it',
-		ratings: 'arrayof:optional|arrayof:natural|arrayof:max:5|field:ratingsList',
-		score: 'number|whole',
-		accountBalance: 'number|min:0|decimalsize:2',
-		hash: 'lower',
-		hash2: 'upper',
-		serverIp: 'ip',
-		dob: 'date',
-		time: 'time',
-		address: {
-			pin: 'string|natural|size:6',
-			city: 'name',
-			country: { code: 'alpha|upper|size:2' },
-		},
-		users: [{ name: 'name', age: 'natural', gender: 'enums:male,female' }],
-		person: 'object',
-		'person.address': 'string',
-		limit: 'optional|string|natural|min:100',
-	}
+describe('README: quick start', () => {
+	test('produces exactly the documented errors', () => {
+		const rules = {
+			name: 'fullname',
+			email: 'email',
+			password: 'string|min:8',
+			age: 'optional|natural|min:18',
+			role: 'enums:admin,user,guest',
+			website: 'optional|url',
+		}
+		const data = {
+			name: 'John',
+			email: 'not-an-email',
+			password: 'abc',
+			age: 15,
+			role: 'superuser',
+			website: 'example.com',
+		}
+		assert.deepEqual(validate(rules, data).errors, [
+			'name must be a valid fullname',
+			'email must be a valid email',
+			'password must have length of at least 8',
+			'age must be at least 18',
+			'role is invalid',
+			'website must be a valid url',
+		])
+	})
 
-	const data = {
-		name: 'test123',
-		gender: 'Male',
-		adult: true,
-		id: '123e4567-e89b-12d3-a456-426655440000',
-		creditCard: '1987654312345678',
-		isMarried: 'no',
-		profile: 'example.com',
-		password: 'ab',
-		favoriteFoods: ['chicken', 'egg roll', 'french fries'],
-		rating: 4.5,
-		ratings: [3, 5, undefined, true, 5.67],
-		score: 234.5,
-		accountBalance: 100.345,
-		hash: 'a6g8d7Fkf9Du',
-		hash2: 'PDH78DI908g56',
-		serverIp: '8.45.23.0',
-		dob: '1996-01-10T23:50:00.0000+05:30',
-		time: '23:50',
-		address: { pin: '829119', city: 'Rock Port', country: { code: 'IN' } },
-		users: [{ name: 'John Doe', age: 20, gender: 'male' }, {}],
-		limit: '90',
+	test('errors is undefined when everything passes', () => {
+		const rules = { name: 'fullname', email: 'email', password: 'string|min:8' }
+		const data = { name: 'John Doe', email: 'john@example.com', password: 'longenough' }
+		assert.equal(validate(rules, data).errors, undefined)
+	})
+})
+
+describe('README: express query example', () => {
+	const rules = {
+		limit: 'optional|string|natural|max:100',
+		page: 'optional|string|natural',
+		productId: 'optional|mongoid',
+		sortBy: 'optional|enums:price,createdAt',
 	}
 
 	test('produces exactly the documented errors', () => {
-		const { errors } = validate(rules, data, { quotes: 'backtick' })
-		assert.deepEqual(errors, [
-			'at least one of `mail` and `phone` is required',
-			'`person name` must be a valid name',
-			'`gender` is invalid',
-			'`isMarried` must be a valid boolean',
-			'`userId` is required',
-			'`profile` must be a valid url',
-			'`password` must have length of at least 3',
-			'rating is not correct, please fix it',
-			'`ratingsList[3]` must be a valid number',
-			'`ratingsList[4]` must be a valid natural number',
-			'`score` must be a valid whole number',
-			'`accountBalance` must have 2 decimal places',
-			'`hash` must not contains upper case letters',
-			'`hash2` must not contains lower case letters',
-			'`users[1].name` is required',
-			'`users[1].age` is required',
-			'`users[1].gender` is required',
-			'`person` is required',
-			'`person.address` is required',
-			'`limit` must be at least 100',
+		const query = { limit: '500', page: '1', productId: 'abc', sortBy: 'name' }
+		assert.deepEqual(validate(rules, query).errors, [
+			'limit must be at most 100',
+			'productId must be a valid mongodb id',
+			'sortBy is invalid',
+		])
+	})
+
+	test('accepts a valid query', () => {
+		const query = {
+			limit: '20',
+			page: '1',
+			productId: '507f1f77bcf86cd799439011',
+			sortBy: 'price',
+		}
+		assert.equal(validate(rules, query).errors, undefined)
+	})
+})
+
+describe('README: nested objects, arrays, arrays of objects', () => {
+	test('produces exactly the documented errors', () => {
+		const rules = {
+			address: {
+				city: 'name',
+				pin: 'string|natural|size:6',
+				country: { code: 'alpha|upper|size:2' },
+			},
+			tags: 'array|min:2|arrayof:string|arrayof:max:10',
+			users: [{ name: 'name', age: 'natural' }],
+		}
+		const data = {
+			address: { city: 'Rock Port', pin: 'ABC', country: { code: 'in' } },
+			tags: ['ok', 'waaaaaaaaaytoolong'],
+			users: [{ name: 'Jo', age: 20 }, {}],
+		}
+		assert.deepEqual(validate(rules, data).errors, [
+			'address.pin must be a valid numeric string',
+			'address.country.code must not contains lower case letters',
+			'tags[1] must have length of at most 10',
+			'users[1].name is required',
+			'users[1].age is required',
 		])
 	})
 })
 
-describe('README: nested object example', () => {
+describe('README: field groups and custom messages', () => {
 	test('produces exactly the documented errors', () => {
+		const rules = {
+			email: 'optional|email',
+			phone: 'optional|phone',
+			$atleast: 'email|phone',
+			age: 'natural|field:person age',
+			score: 'number|error:score must be numeric',
+		}
+		const { errors } = validate(rules, { age: -5, score: 'x' }, { quotes: 'backtick' })
+		assert.deepEqual(errors, [
+			'at least one of `email` and `phone` is required',
+			'`person age` must be a valid natural number',
+			'score must be numeric',
+		])
+	})
+})
+
+describe('README: TypeScript example compiles as documented', () => {
+	test('the valid rule works at runtime too', () =>
+		assert.equal(validate({ age: 'natural|min:18' }, { age: 20 }).errors, undefined))
+})
+
+describe('README: options', () => {
+	test('strict rejects undeclared fields', () =>
+		assert.deepEqual(validate({ a: 'string' }, { a: 'x', b: 1 }, { strict: true }).errors, [
+			'b is not required',
+		]))
+	test('quotes wraps field names', () =>
+		assert.deepEqual(validate({ a: 'string' }, { a: 1 }, { quotes: 'backtick' }).errors, [
+			'`a` must be string',
+		]))
+})
+
+describe('DOCS.md: worked examples stay correct', () => {
+	test('nested object example', () => {
 		const rules = {
 			address: {
 				line1: 'string|min:10',
@@ -121,10 +157,8 @@ describe('README: nested object example', () => {
 			'address.country.phoneCode is invalid',
 		])
 	})
-})
 
-describe('README: array objects example', () => {
-	test('produces exactly the documented errors', () => {
+	test('array objects example', () => {
 		const rules = {
 			products: [
 				{
@@ -175,36 +209,10 @@ describe('README: array objects example', () => {
 			'products[4].price must be a valid positive number',
 		])
 	})
-})
 
-describe('README: strict check example', () => {
-	test('produces exactly the documented error', () => {
+	test('strict check example', () => {
 		const rules = { name: 'name', age: 'natural|min:18', gender: 'enums:male,female' }
 		const user = { name: 'john doe', age: 30, gender: 'male', hobby: 'web development' }
 		assert.deepEqual(validate(rules, user, { strict: true }).errors, ['hobby is not required'])
-	})
-})
-
-describe('README: express query example', () => {
-	test('accepts a realistic query string object', () => {
-		const rules = {
-			limit: 'optional|string|natural|max:100',
-			page: 'optional|string|natural',
-			searchKey: 'optional|string|min:1',
-			productId: 'optional|mongoid',
-			withProduct: 'optional|string|boolean',
-			sortBy: 'optional|enums:expiry,price,createdAt',
-			sortOrder: 'optional|enums:ascending,descending',
-		}
-		const query = {
-			limit: '20',
-			page: '1',
-			searchKey: 'phone',
-			productId: '507f1f77bcf86cd799439011',
-			withProduct: 'true',
-			sortBy: 'price',
-			sortOrder: 'ascending',
-		}
-		assert.equal(validate(rules, query).errors, undefined)
 	})
 })
