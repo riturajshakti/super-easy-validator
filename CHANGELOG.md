@@ -4,6 +4,17 @@ Full history: https://github.com/riturajshakti/super-easy-validator/releases
 
 ## 0.9.0
 
+- Security: the `name` rule was vulnerable to catastrophic backtracking (ReDoS).
+  A 20-character input took ~15 seconds; both `name` and `fullname` are now
+  linear-time
+- Fix: `name` and `fullname` rejected every non-ASCII name (`José`, `李小龙`,
+  `Владимир`). Letters from all scripts are now accepted
+- Fix: `fullname` rejected ordinary names such as `J Doe`, `Mary J Watson`,
+  `Jean-Luc Picard` and `Dr. Smith`; it now means "two or more words"
+- Fix: a dot-notation rule whose intermediate value was `null` (e.g. `'a.b.c'`
+  against `{ a: null }`) crashed internally
+- Deprecated: `mongoid` is renamed to `objectid`. `mongoid` still works and
+  behaves identically, but logs a warning once per process
 - Fix: a bare `symbol` rule was never applied
 - Fix: falsy values (`''`, `0`, `false`) in an array-rule field reported
   "is required" instead of the correct type error

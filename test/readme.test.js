@@ -41,7 +41,7 @@ describe('README: express query example', () => {
 	const rules = {
 		limit: 'optional|string|natural|max:100',
 		page: 'optional|string|natural',
-		productId: 'optional|mongoid',
+		productId: 'optional|objectid',
 		sortBy: 'optional|enums:price,createdAt',
 	}
 
@@ -49,7 +49,7 @@ describe('README: express query example', () => {
 		const query = { limit: '500', page: '1', productId: 'abc', sortBy: 'name' }
 		assert.deepEqual(validate(rules, query).errors, [
 			'limit must be at most 100',
-			'productId must be a valid mongodb id',
+			'productId must be a valid object id',
 			'sortBy is invalid',
 		])
 	})

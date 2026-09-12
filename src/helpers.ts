@@ -45,7 +45,7 @@ export function getPropByString(obj: Data, propString: string) {
 		prop = props[i];
 
 		let candidate = obj[prop];
-		if (candidate !== undefined) {
+		if (candidate !== undefined && candidate !== null && typeof candidate === 'object') {
 			obj = candidate;
 		} else {
 			break;

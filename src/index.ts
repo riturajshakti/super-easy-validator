@@ -14,6 +14,18 @@ import {
 
 const defaultValidatorConfig = { quotes: 'none' } as const
 
+let mongoidWarned = false
+
+function warnDeprecatedMongoid() {
+	if (mongoidWarned) {
+		return
+	}
+	mongoidWarned = true
+	console.warn(
+		"[super-easy-validator] the 'mongoid' rule is deprecated and will be removed in a future release. Use 'objectid' instead."
+	)
+}
+
 function validate(rules: Rules, data: Data, config: ValidatorConfig = defaultValidatorConfig) {
 	try {
 		let allErrors: string[] | undefined = validateInternal(rules, data, config)
@@ -162,7 +174,7 @@ function validateSingleData(key: string, value: any, validations: Validation[], 
 
 		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,objectid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {
@@ -422,12 +434,17 @@ function checkSpecificStringType(
 		return
 	}
 
-	if (specificType === 'name' && !/^([a-zA-Z]+[,.]?[ ]?|[a-zA-Z]+['-]?)+$/.test(value)) {
+	if (specificType === 'name' && !/^\p{L}[\p{L}\p{M}]*\.?(?:[ '’\-]\p{L}[\p{L}\p{M}]*\.?)*$/u.test(value)) {
 		errors.push(error ?? `"${label}" must be a valid name`)
 		return
 	}
 
-	if (specificType === 'fullname' && !/^([a-zA-Z]{2,}\s[a-zA-Z]{1,}'?-?[a-zA-Z]{2,}\s?([a-zA-Z]{1,})?)$/.test(value)) {
+	if (
+		specificType === 'fullname' &&
+		!/^\p{L}[\p{L}\p{M}]*\.?(?:['’\-]\p{L}[\p{L}\p{M}]*\.?)*(?: \p{L}[\p{L}\p{M}]*\.?(?:['’\-]\p{L}[\p{L}\p{M}]*\.?)*)+$/u.test(
+			value
+		)
+	) {
 		errors.push(error ?? `"${label}" must be a valid fullname`)
 		return
 	}
@@ -465,9 +482,14 @@ function checkSpecificStringType(
 		return
 	}
 
-	if (specificType === 'mongoid' && !/^[0-9a-fA-F]{24}$/.test(value)) {
-		errors.push(error ?? `"${label}" must be a valid mongodb id`)
-		return
+	if (specificType === 'mongoid' || specificType === 'objectid') {
+		if (specificType === 'mongoid') {
+			warnDeprecatedMongoid()
+		}
+		if (!/^[0-9a-fA-F]{24}$/.test(value)) {
+			errors.push(error ?? `"${label}" must be a valid object id`)
+			return
+		}
 	}
 
 	if (
@@ -970,7 +992,7 @@ function checkSpecificArrayType(
 
 		// ! email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip
 		if (
-			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,date,dateonly,time,lower,upper,ip'
+			'email,url,domain,name,fullname,username,alpha,alphanumeric,phone,phonecode,uuid,mongoid,objectid,date,dateonly,time,lower,upper,ip'
 				.split(',')
 				.includes(validation)
 		) {

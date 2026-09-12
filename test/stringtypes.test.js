@@ -69,9 +69,18 @@ describe('phonecode', () => {
 	rejects('phonecode', 'must be a valid phone code', ['91', '+1234', '+'])
 })
 
-describe('mongoid', () => {
+describe('objectid', () => {
+	accepts('objectid', ['507f1f77bcf86cd799439011', '000000000000000000000000'])
+	rejects('objectid', 'must be a valid object id', [
+		'507f1f77bcf86cd79943901',
+		'zzzf1f77bcf86cd799439011',
+		'507f1f77bcf86cd7994390111',
+	])
+})
+
+describe('mongoid (deprecated alias)', () => {
 	accepts('mongoid', ['507f1f77bcf86cd799439011'])
-	rejects('mongoid', 'must be a valid mongodb id', ['507f1f77bcf86cd79943901', 'zzzf1f77bcf86cd799439011'])
+	rejects('mongoid', 'must be a valid object id', ['507f1f77bcf86cd79943901', 'zzzf1f77bcf86cd799439011'])
 })
 
 describe('uuid', () => {

@@ -71,7 +71,7 @@ In these cases, it will automatic check for `string` data type, and you don't ne
 - `username`
 - `alpha`
 - `alphanumeric`
-- `mongoid`
+- `objectid`
 - `uuid`
 - `date`
 - `dateonly`
@@ -547,9 +547,9 @@ let rules = {
 };
 ```
 
-This will make sure at least one of the 3 is `true`.
+This will make sure at least one of the 3 is present. It checks presence, not value — a field set to `false` still counts as given.
 
-Suppose you want at least `n` number of fields to be present from a set of fields. You can achieve this using `size:` keyword. e.g.
+Suppose you want at least `n` number of fields to be present from a set of fields. You can achieve this using `size:` keyword. The `size:` part is not counted as a field. e.g.
 
 ```js
 let rules = {
@@ -594,7 +594,7 @@ let rules = {
 
 This will make sure at most one of the 3 fields is given.
 
-Suppose you want at most `n` number of fields to be present from a set of fields. You can achieve this using `size:` keyword. e.g.
+Suppose you want at most `n` number of fields to be present from a set of fields. You can achieve this using `size:` keyword. The `size:` part is not counted as a field. e.g.
 
 ```js
 let rules = {
@@ -636,7 +636,7 @@ let rules = {
 };
 ```
 
-> **Note:** This validation automatically applies in cases of: `email` , `url` , `domain` , `name` , `fullname` , `username` , `alpha` , `alphanumeric` , `phone` , `phonecode` , `mongoid` , `uuid` , `date` , `dateonly` , `time` , `lower` , `upper` , `ip` , and `regex:<value>` .
+> **Note:** This validation automatically applies in cases of: `email` , `url` , `domain` , `name` , `fullname` , `username` , `alpha` , `alphanumeric` , `phone` , `phonecode` , `objectid` , `uuid` , `date` , `dateonly` , `time` , `lower` , `upper` , `ip` , and `regex:<value>` .
 
 ### 2. **`number`**
 
@@ -760,15 +760,19 @@ let rules = {
 };
 ```
 
+Letters from any script are accepted, so `José`, `李小龙` and `Владимир` are all valid. A name may contain spaces, apostrophes, hyphens and a trailing period on any word — `Jean-Luc`, `O'Brien`, `Dr. Smith` and `van der Berg` all pass. Digits, underscores and repeated or leading separators are rejected.
+
 ### 5. **`fullname`**
 
-`fullname` validation is used to check if a field is a valid fullname (must be 2 or 3 words separated with spaces) string. e.g.
+`fullname` validation is used to check if a field is a valid fullname (two or more words separated by single spaces) string. e.g.
 
 ```js
 let rules = {
   studentName: 'fullname',
 };
 ```
+
+Letters from any script are accepted, so `María García`, `山田 太郎` and `Nguyễn Văn Anh` are all valid. Each word may contain apostrophes, hyphens and a trailing period, so `Jean-Luc Picard`, `O'Brien Smith` and `J. R. R. Tolkien` pass. Leading, trailing and repeated spaces are rejected.
 
 ### 6. **`username`**
 
@@ -820,15 +824,17 @@ let rules = {
 };
 ```
 
-### 11. **`mongoid`**
+### 11. **`objectid`**
 
-`mongoid` validation is used to check if a string is valid mongodb ID. e.g.
+`objectid` validation is used to check if a string is a valid MongoDB ObjectId (24 hexadecimal characters). e.g.
 
 ```js
 let rules = {
-  userId: 'mongoid',
+  userId: 'objectid',
 };
 ```
+
+> **DEPRECATED:** `mongoid` is the former name of this rule. It still works and behaves identically, but logs a deprecation warning once per process and will be removed in a future release. Replace `mongoid` with `objectid`.
 
 ### 12. **`date`**
 
@@ -1077,6 +1083,8 @@ let rules = {
 
 > **NOTE:** In case if the data type is not defined as in previous case for `field` , then it will detect the data type of the `field` and then apply this validation but only if `field` is of type `string` , `number` or `array` .
 
+> **NOTE:** For numbers, only the digits are counted — a minus sign, decimal point and exponent are ignored. So `-123`, `1.23` and `123` all have size 3.
+
 ### 3. **`min`**
 
 `min:<value>` validation is used to check if a field has minimum of value `<value>` .
@@ -1154,6 +1162,15 @@ let rules = {
 ```
 
 > Now, it will work fine.
+
+> **NOTE:** Every entry in a rule array must be a string. Passing a regular expression object instead of a `regex:` string is reported as an error:
+
+```js
+let rules = {
+  password: ['string', /[0-9]/],  // wrong
+};
+// → ['password has an invalid rule: every rule in the array must be a string']
+```
 
 ### 6. **`decimalsize`**
 
@@ -1310,6 +1327,10 @@ let rules = {
 
 #### **`arrayof`:** supports the following validations:
 
+##### Optional and Nullable Elements
+* `arrayof:optional`
+* `arrayof:nullable`
+
 ##### Data Types
 * `arrayof:string`
 * `arrayof:number`
@@ -1330,7 +1351,7 @@ let rules = {
 * `arrayof:alphanumeric`
 * `arrayof:phone`
 * `arrayof:phonecode`
-* `arrayof:mongoid`
+* `arrayof:objectid`
 * `arrayof:uuid`
 * `arrayof:date`
 * `arrayof:dateonly`

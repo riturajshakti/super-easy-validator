@@ -33,7 +33,9 @@ export type SpecificStringType =
 	| 'phone'
 	| 'phonecode'
 	| 'uuid'
+	/** @deprecated Use `objectid` instead. */
 	| 'mongoid'
+	| 'objectid'
 	| 'date'
 	| 'dateonly'
 	| 'time'
@@ -80,7 +82,9 @@ export type ArrayType =
 	| 'arrayof:phone'
 	| 'arrayof:phonecode'
 	| 'arrayof:uuid'
+	/** @deprecated Use `arrayof:objectid` instead. */
 	| 'arrayof:mongoid'
+	| 'arrayof:objectid'
 	| 'arrayof:date'
 	| 'arrayof:dateonly'
 	| 'arrayof:time'
@@ -127,7 +131,9 @@ export type Validation =
 	| 'phone'
 	| 'phonecode'
 	| 'uuid'
+	/** @deprecated Use `objectid` instead. */
 	| 'mongoid'
+	| 'objectid'
 	| 'date'
 	| 'dateonly'
 	| 'time'
@@ -177,6 +183,7 @@ export type Validation =
 			| 'phonecode'
 			| 'uuid'
 			| 'mongoid'
+			| 'objectid'
 			| 'date'
 			| 'dateonly'
 			| 'time'

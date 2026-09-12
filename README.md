@@ -1,6 +1,6 @@
 # super-easy-validator
 
-**Zero-dependency data validation with rules you write as plain strings.** Inspired by Laravel's validator. No builder chains, no schema objects — just `'optional|email'`.
+**Validate data with rules you write as plain strings.** Zero dependencies, ~11 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
 
 ```sh
 npm i super-easy-validator
@@ -89,13 +89,13 @@ if (errors) console.log(errors)
 
 ## Example: validating an Express query string
 
-Every value in `req.query` is a string, and most are optional. Rules like `mongoid` and `enums:` check for a string automatically, so you only add `string` where you need a numeric-string check.
+Every value in `req.query` is a string, and most are optional. Rules like `objectid` and `enums:` check for a string automatically, so you only add `string` where you need a numeric-string check.
 
 ```js
 const rules = {
   limit: 'optional|string|natural|max:100',
   page: 'optional|string|natural',
-  productId: 'optional|mongoid',
+  productId: 'optional|objectid',
   sortBy: 'optional|enums:price,createdAt',
 }
 
@@ -107,7 +107,7 @@ if (errors) return res.status(400).json({ message: errors[0] })
 // for { limit: '500', page: '1', productId: 'abc', sortBy: 'name' }
 [
   'limit must be at most 100',
-  'productId must be a valid mongodb id',
+  'productId must be a valid object id',
   'sortBy is invalid'
 ]
 ```
@@ -190,7 +190,7 @@ Combine rules with `|`, or pass an array — `['string', 'min:3']` — when a ru
 |---|---|
 | **Presence** | `optional` `nullable` `$atleast` `$atmost` |
 | **Types** | `string` `number` `boolean` `array` `object` `bigint` `symbol` |
-| **Strings** | `email` `url` `domain` `name` `fullname` `username` `alpha` `alphanumeric` `phone` `phonecode` `mongoid` `uuid` `date` `dateonly` `time` `lower` `upper` `ip` |
+| **Strings** | `email` `url` `domain` `name` `fullname` `username` `alpha` `alphanumeric` `phone` `phonecode` `objectid` `uuid` `date` `dateonly` `time` `lower` `upper` `ip` |
 | **Numbers** | `int` `positive` `negative` `natural` `whole` |
 | **Constraints** | `equal:` `size:` `min:` `max:` `regex:` `decimalsize:` `decimalmin:` `decimalmax:` `enums:` |
 | **Arrays** | `arrayof:<any rule above>` |
