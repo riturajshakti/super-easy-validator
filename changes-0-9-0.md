@@ -121,6 +121,46 @@ validate({ addr: { city: 'name' } }, { addr: null })
 
 Fix: added an explicit undefined/null guard before the type check.
 
+### Bug 4 — any non-string entry in an array rule crashed the validator
+
+Reported from real use: writing a rule array with a RegExp literal instead of
+a `regex:` string.
+
+```js
+validate({ password: ['string', 'min:3', /123456/i] }, { password: 'abc' })
+// before → ['error occurred while data validation']   (an internal TypeError,
+//           swallowed by the outer try/catch — the message says nothing)
+// after  → ['password has an invalid rule: every rule in the array must be a string']
+```
+
+The throw was `e.startsWith is not a function` inside `getField`, and it
+happened for *any* non-string entry — a number, `null`, an object, a nested
+array — not just RegExp.
+
+Fix, in two places:
+
+- `src/helpers.ts` — `getField` / `getError` / `getSize` now share a
+  `findPrefixed` helper that checks `typeof e === 'string'` before calling
+  `startsWith`, so a malformed entry can never throw.
+- `src/index.ts` — the array-rule branch now detects a non-string entry up
+  front and reports which field is at fault, instead of letting it reach the
+  opaque catch-all.
+
+### Type gap — `arrayof:optional` and `arrayof:nullable` were not in the types
+
+Found while investigating bug 4. Both work at runtime and are documented in
+the README, but neither appeared in the `ArrayType` union or the `arrayof:`
+branch of `Validation`. So this **valid, documented** rule was a compile error:
+
+```ts
+const rules: Rules = { ratings: ['arrayof:optional', 'arrayof:natural'] }
+// before → TS2322: '"arrayof:optional"' is not assignable to type 'RuleString'
+// after  → compiles
+```
+
+Added `'optional'` and `'nullable'` to both unions in `src/types.ts`. This is
+a types-only change; no runtime behaviour moved.
+
 ---
 
 ## Pass 3 — test suite

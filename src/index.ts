@@ -56,6 +56,11 @@ function validateInternal(
 			if (typeof value === 'string') {
 				validations = (value as string).split('|') as Validation[]
 			} else if (Array.isArray(value) && typeof value[0] === 'string') {
+				const invalid = (value as unknown[]).find((e) => typeof e !== 'string')
+				if (invalid !== undefined) {
+					allErrors.push(`${label} has an invalid rule: every rule in the array must be a string`)
+					continue
+				}
 				validations = value as string[] as Validation[]
 			} else if (typeof value === 'object' && !Array.isArray(value)) {
 				const _internalData = (data as Data)[key]

@@ -105,6 +105,11 @@
   "is required" instead of the correct type error
 - Bug Fix: a `null` nested object reported "must be of type object" instead of
   "is required"
+- Bug Fix: a non-string entry in an array rule (e.g. a RegExp literal like
+  `['string', /abc/i]`) crashed internally and returned the useless message
+  "error occurred while data validation"; it now names the offending field
+- Bug Fix: `arrayof:optional` and `arrayof:nullable` were missing from the
+  TypeScript types, so these valid documented rules failed to compile
 - New: full test suite — 262 tests using Node's built-in test runner, still
   zero dependencies
 - New: TypeScript types are now generated from source, so rule strings are

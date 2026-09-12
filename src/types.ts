@@ -55,6 +55,10 @@ export type ConstraintType =
 	| `enums:${string}`; // string, number, boolean (comma separated)
 
 export type ArrayType =
+	// optional and nullable elements
+	| 'arrayof:optional'
+	| 'arrayof:nullable'
+
 	// basic data types
 	| 'arrayof:string'
 	| 'arrayof:number'
@@ -147,6 +151,10 @@ export type Validation =
 	| `field:${string}` // set custom field name in case of error message
 	| `error:${string}` // set custom error message in case of error
 	| `arrayof:${
+			// optional and nullable elements
+			| 'optional'
+			| 'nullable'
+
 			// basic data types
 			| 'string'
 			| 'number'

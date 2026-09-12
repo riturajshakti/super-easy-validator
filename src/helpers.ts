@@ -1,10 +1,14 @@
 import { Validation, Data } from './types';
 
+function findPrefixed(validations: Validation[], prefix: string) {
+  return validations.find(e => typeof e === 'string' && e.startsWith(prefix));
+}
+
 export function getField(validations: Validation[], key: string) {
   if(/\[[0-9]+\]$/.test(key)) {
     return;
   }
-  let validation = validations.find(e => e.startsWith('field:'));
+  let validation = findPrefixed(validations, 'field:');
   if(!validation) {
     return;
   }
@@ -13,7 +17,7 @@ export function getField(validations: Validation[], key: string) {
 }
 
 export function getError(validations: Validation[]) {
-  let validation = validations.find(e => e.startsWith('error:'));
+  let validation = findPrefixed(validations, 'error:');
   if(!validation) {
     return;
   }
@@ -22,7 +26,7 @@ export function getError(validations: Validation[]) {
 }
 
 export function getSize(validations: Validation[]): number {
-  let validation = validations.find(e => e.startsWith('size:'));
+  let validation = findPrefixed(validations, 'size:');
   if(!validation) {
     return 1;
   }
