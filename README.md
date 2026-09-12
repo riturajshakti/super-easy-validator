@@ -25,6 +25,24 @@ z.number().int().positive().min(18).optional()
 - Works with plain JavaScript too
 - Nested objects, arrays of objects, per-element array rules, custom messages
 
+### Size comparison
+
+| Package | Download | On disk | Dependencies |
+|---|---|---|---|
+| **super-easy-validator** | **11 kB** | **54 kB** | **0** |
+| express-validator | 34 kB | 6.8 MB | 2 |
+| yup | 65 kB | 780 kB | 4 |
+| valibot | 189 kB | 1.8 MB | 0 |
+| joi | 417 kB | 2.7 MB | 7 |
+| zod | 1.0 MB | 8.2 MB | 0 |
+
+"On disk" is the full `node_modules` footprint after install, including
+transitive dependencies. Measured on the current release of each package.
+
+These libraries are not all equivalent — zod and valibot infer TypeScript types
+from your schema, and joi covers cases this package does not. If you need those,
+use them. This package aims at the common cases, at a fraction of the weight.
+
 ---
 
 ## Quick start
