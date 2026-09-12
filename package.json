@@ -1,7 +1,7 @@
 {
 	"name": "super-easy-validator",
 	"version": "0.9.0",
-	"description": "Validate data with rules you write as plain strings, like 'optional|email'. Zero dependencies, ~11 kB, fully typed. No builder chains or schemas.",
+	"description": "Validate data with rules you write as plain strings, like 'optional|email'. Zero dependencies, ~15 kB, fully typed. No builder chains or schemas.",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"exports": {

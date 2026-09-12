@@ -1,6 +1,6 @@
 # super-easy-validator
 
-**Validate data with rules you write as plain strings.** Zero dependencies, ~11 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
+**Validate data with rules you write as plain strings.** Zero dependencies, ~15 kB, fully typed. No builder chains, no schema objects — just `'optional|email'`.
 
 ```sh
 npm i super-easy-validator
@@ -20,7 +20,7 @@ npm i super-easy-validator
 z.number().int().positive().min(18).optional()
 ```
 
-- **Zero runtime dependencies** — ~11 kB to download, ~54 kB on disk
+- **Zero runtime dependencies** — ~15 kB to download, ~71 kB on disk
 - **Type-safe rule strings** — `'mim:5'` is a compile error in TypeScript
 - Works with plain JavaScript too
 - Nested objects, arrays of objects, per-element array rules, custom messages
@@ -29,7 +29,7 @@ z.number().int().positive().min(18).optional()
 
 | Package | Download | On disk | Dependencies |
 |---|---|---|---|
-| **super-easy-validator** | **11 kB** | **54 kB** | **0** |
+| **super-easy-validator** | **15 kB** | **71 kB** | **0** |
 | express-validator | 34 kB | 6.8 MB | 2 |
 | yup | 65 kB | 780 kB | 4 |
 | valibot | 189 kB | 1.8 MB | 0 |
