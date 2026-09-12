@@ -20,7 +20,7 @@ npm i super-easy-validator
 z.number().int().positive().min(18).optional()
 ```
 
-- **Zero runtime dependencies**, ~20 kB installed
+- **Zero runtime dependencies** — ~11 kB to download, ~54 kB on disk
 - **Type-safe rule strings** — `'mim:5'` is a compile error in TypeScript
 - Works with plain JavaScript too
 - Nested objects, arrays of objects, per-element array rules, custom messages
