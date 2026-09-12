@@ -29,7 +29,7 @@ import {
 	ValidatorResult,
 } from './types.ts'
 
-const defaultValidatorConfig = { quotes: 'none' } as const
+const defaultValidatorConfig = { quotes: 'none', arrayIndexingCheck: true } as const
 
 let mongoidWarned = false
 
