@@ -1,4 +1,4 @@
-import { Validation, Data } from './types';
+import { Validation, Data } from './types.ts';
 
 function findPrefixed(validations: Validation[], prefix: string) {
   return validations.find(e => typeof e === 'string' && e.startsWith(prefix));

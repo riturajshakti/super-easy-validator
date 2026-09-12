@@ -3,13 +3,12 @@
     "module": "CommonJS",
     "esModuleInterop": true,
     "target": "ES6",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
     "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*"]
-    },
     "declaration": true,
     "sourceMap": false,
     "strict": true,

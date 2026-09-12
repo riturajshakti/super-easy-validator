@@ -1,12 +1,12 @@
-import { ErrorCodes, ValidationDetail } from './codes'
-import { quotes } from './config'
+import { ErrorCodes, ValidationDetail } from './codes.ts'
+import { quotes } from './config.ts'
 import {
 	assertValidOperatorNode,
 	assertValidRuleString,
 	assertValidRuleTokens,
 	InvalidRuleError,
 	isOperatorNode,
-} from './rules'
+} from './rules.ts'
 import {
 	getError,
 	getField,
@@ -15,7 +15,7 @@ import {
 	hasIndexSyntax,
 	isSliceKey,
 	resolveIndexedPath,
-} from './helpers'
+} from './helpers.ts'
 import {
 	ArrayType,
 	ConstraintType,
@@ -26,7 +26,8 @@ import {
 	SpecificStringType,
 	Validation,
 	ValidatorConfig,
-} from './types'
+	ValidatorResult,
+} from './types.ts'
 
 const defaultValidatorConfig = { quotes: 'none' } as const
 
@@ -42,7 +43,7 @@ function warnDeprecatedMongoid() {
 	)
 }
 
-function validate(rules: Rules, data: Data, config: ValidatorConfig = defaultValidatorConfig) {
+function validate(rules: Rules, data: Data, config: ValidatorConfig = defaultValidatorConfig): ValidatorResult {
 	try {
 		const rawDetails: ValidationDetail[] = validateInternal(rules, data, config)
 
@@ -1400,7 +1401,7 @@ function validateStrictCheck(rules: Rules, data: Data, errors: ValidationDetail[
 const Validator = { validate, ErrorCodes }
 
 export { validate, ErrorCodes }
-export type { ErrorCode, ValidationDetail } from './codes'
+export type { ErrorCode, ValidationDetail } from './codes.ts'
 export default Validator
 export type {
 	Rules,
@@ -1418,8 +1419,5 @@ export type {
 	SwitchBranch,
 	CustomRule,
 	CustomRuleResult,
-} from './types'
+} from './types.ts'
 
-module.exports = Validator
-module.exports.validate = validate
-module.exports.default = Validator

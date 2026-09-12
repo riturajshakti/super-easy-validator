@@ -22,6 +22,9 @@ Full history: https://github.com/riturajshakti/super-easy-validator/releases
   warns once per process
 - Fixed: nested arrays (`arrayof:arrayof:`), several error-path labels, a crash
   on dot-notation paths through `null`, and `decimalmax:0`
+- Fixed: the build now sets `__esModule` correctly, improving bundler interop.
+  Three redundant `module.exports` assignments were overwriting it; every
+  `require()` and `import` style is unchanged
 - Docs: guide and reference moved to `DOCS.md`; 895 tests
 
 ## 0.8.x

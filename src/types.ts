@@ -1,6 +1,6 @@
-import { ValidationDetail } from './codes';
+import { ValidationDetail } from './codes.ts';
 
-export type { ErrorCode, ValidationDetail } from './codes';
+export type { ErrorCode, ValidationDetail } from './codes.ts';
 
 export type RuleString = Validation | `${Validation}|${string}`;
 

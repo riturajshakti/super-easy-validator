@@ -40,9 +40,9 @@
 	"author": "Rituraj Shakti",
 	"license": "MIT",
 	"devDependencies": {
-		"@types/node": "^20.6.2",
+		"@types/node": "^24.13.4",
 		"nodemon": "^2.0.22",
-		"typescript": "^5.2.2"
+		"typescript": "^5.9.3"
 	},
 	"keywords": [
 		"validator",
