@@ -4,6 +4,10 @@ Complete guide and API reference for [`super-easy-validator`](https://www.npmjs.
 
 For a quick overview and common examples, see the [README](README.md).
 
+- [npm package](https://www.npmjs.com/package/super-easy-validator)
+- [GitHub repository](https://github.com/riturajshakti/super-easy-validator)
+- [Report an issue](https://github.com/riturajshakti/super-easy-validator/issues)
+
 > This file is not shipped in the npm package — it lives on GitHub to keep the
 > published tarball small.
 

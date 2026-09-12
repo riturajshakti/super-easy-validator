@@ -212,6 +212,8 @@ validate(rules, data, { quotes: 'backtick', strict: true })
 ## Links
 
 - **[Full documentation](https://github.com/riturajshakti/super-easy-validator/blob/main/DOCS.md)** — guide and complete API reference
+- [npm package](https://www.npmjs.com/package/super-easy-validator)
+- [GitHub repository](https://github.com/riturajshakti/super-easy-validator)
 - [Changelog](https://github.com/riturajshakti/super-easy-validator/blob/main/CHANGELOG.md)
 - [Report an issue](https://github.com/riturajshakti/super-easy-validator/issues)
 
